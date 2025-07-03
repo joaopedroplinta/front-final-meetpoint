@@ -25,6 +25,7 @@ export default function WelcomeScreen() {
     router.push('/auth/register-type');
   };
 
+  // Show loading only if we're actually loading something
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -33,11 +34,7 @@ export default function WelcomeScreen() {
     );
   }
 
-  // Don't render the welcome screen if user is authenticated
-  if (isAuthenticated) {
-    return null;
-  }
-
+  // Always show welcome screen unless explicitly authenticated
   return (
     <View style={styles.container}>
       <View style={styles.content}>
