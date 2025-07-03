@@ -1,6 +1,6 @@
 import { Establishment, Rating, User } from '@/types';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://172.20.10.2:3000/api';
 
 class ApiError extends Error {
   constructor(public status: number, message: string, public details?: any) {
