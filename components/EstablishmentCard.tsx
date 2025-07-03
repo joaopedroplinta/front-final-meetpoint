@@ -17,6 +17,13 @@ const EstablishmentCard = ({ establishment }: EstablishmentCardProps) => {
     router.push(`/establishment/${establishment.id}`);
   };
 
+  // Handle both API response formats
+  const name = establishment.nome || establishment.name || 'Estabelecimento';
+  const address = establishment.endereco || establishment.address || 'Endereço não informado';
+  const averageRating = establishment.averageRating || 0;
+  const numRatings = establishment.numRatings || 0;
+  const imageUrl = establishment.imageUrl || 'https://images.pexels.com/photos/1855214/pexels-photo-1855214.jpeg?auto=compress&cs=tinysrgb&w=800';
+
   return (
     <TouchableOpacity 
       style={styles.card} 
@@ -24,23 +31,23 @@ const EstablishmentCard = ({ establishment }: EstablishmentCardProps) => {
       activeOpacity={0.9}
     >
       <Image
-        source={{ uri: establishment.imageUrl }}
+        source={{ uri: imageUrl }}
         style={styles.image}
         resizeMode="cover"
       />
       <View style={styles.contentContainer}>
-        <Text style={styles.name}>{establishment.name}</Text>
+        <Text style={styles.name}>{name}</Text>
         <View style={styles.categoryContainer}>
-          <Text style={styles.category}>{establishment.category}</Text>
+          <Text style={styles.category}>{establishment.category || 'Estabelecimento'}</Text>
         </View>
         <View style={styles.locationContainer}>
           <MapPin size={14} color={Colors.textSecondary} />
-          <Text style={styles.address}>{establishment.address}</Text>
+          <Text style={styles.address} numberOfLines={1}>{address}</Text>
         </View>
         <View style={styles.ratingContainer}>
-          <RatingStars rating={establishment.averageRating} size={16} />
+          <RatingStars rating={averageRating} size={16} />
           <Text style={styles.ratingText}>
-            {establishment.averageRating.toFixed(1)} ({establishment.numRatings})
+            {averageRating.toFixed(1)} ({numRatings})
           </Text>
         </View>
       </View>
@@ -96,6 +103,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginLeft: 4,
     fontFamily: Fonts.regular,
+    flex: 1,
   },
   ratingContainer: {
     flexDirection: 'row',

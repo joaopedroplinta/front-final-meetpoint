@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,15 +7,19 @@ import {
   ScrollView, 
   SafeAreaView, 
   Platform,
-  Alert
+  Alert,
+  TouchableOpacity
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Eye, EyeOff, ChevronDown } from 'lucide-react-native';
 import Button from '@/components/Button';
-import Colors from '@/constants/Colors';
+import { Colors, Fonts } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
+import { apiService } from '@/services/api';
 
 export default function RegisterBusinessScreen() {
   const router = useRouter();
+  const { register, loading, error } = useAuth();
   const [formData, setFormData] = useState({
     businessName: '',
     ownerName: '',
@@ -30,12 +34,33 @@ export default function RegisterBusinessScreen() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: number; nome: string }[]>([]);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
-  const categories = [
-    'Restaurante', 'Café', 'Bar', 'Padaria', 'Mercado', 
-    'Farmácia', 'Loja', 'Serviços', 'Outros'
-  ];
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const tipos = await apiService.getTipos();
+      setCategories(tipos);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      // Fallback categories
+      setCategories([
+        { id: 1, nome: 'Restaurante' },
+        { id: 2, nome: 'Café' },
+        { id: 3, nome: 'Bar' },
+        { id: 4, nome: 'Padaria' },
+        { id: 5, nome: 'Mercado' },
+        { id: 6, nome: 'Farmácia' },
+        { id: 7, nome: 'Loja' },
+        { id: 8, nome: 'Serviços' },
+        { id: 9, nome: 'Outros' }
+      ]);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -81,17 +106,28 @@ export default function RegisterBusinessScreen() {
     return true;
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!validateForm()) return;
 
-    setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await register({
+        name: formData.ownerName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        userType: 'business',
+        businessData: {
+          businessName: formData.businessName,
+          cnpj: formData.cnpj,
+          category: formData.category,
+          address: formData.address,
+          description: formData.description
+        }
+      });
+      
       Alert.alert(
         'Cadastro realizado!',
-        'Seu estabelecimento foi cadastrado com sucesso. Aguarde a aprovação.',
+        'Seu estabelecimento foi cadastrado com sucesso.',
         [
           {
             text: 'OK',
@@ -99,7 +135,9 @@ export default function RegisterBusinessScreen() {
           },
         ]
       );
-    }, 2000);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível cadastrar o estabelecimento. Tente novamente.');
+    }
   };
 
   return (
@@ -111,13 +149,19 @@ export default function RegisterBusinessScreen() {
             Preencha os dados do seu negócio para começar a receber avaliações
           </Text>
 
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Nome do estabelecimento</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Digite o nome do seu negócio"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.businessName}
                 onChangeText={(value) => handleInputChange('businessName', value)}
                 autoCapitalize="words"
@@ -129,7 +173,7 @@ export default function RegisterBusinessScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Digite seu nome completo"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.ownerName}
                 onChangeText={(value) => handleInputChange('ownerName', value)}
                 autoCapitalize="words"
@@ -141,7 +185,7 @@ export default function RegisterBusinessScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Digite o email do estabelecimento"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.email}
                 onChangeText={(value) => handleInputChange('email', value)}
                 keyboardType="email-address"
@@ -154,7 +198,7 @@ export default function RegisterBusinessScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="(11) 99999-9999"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.phone}
                 onChangeText={(value) => handleInputChange('phone', value)}
                 keyboardType="phone-pad"
@@ -166,7 +210,7 @@ export default function RegisterBusinessScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="00.000.000/0000-00"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.cnpj}
                 onChangeText={(value) => handleInputChange('cnpj', value)}
                 keyboardType="numeric"
@@ -175,16 +219,35 @@ export default function RegisterBusinessScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Categoria</Text>
-              <View style={styles.selectContainer}>
-                <TextInput
-                  style={styles.selectInput}
-                  placeholder="Selecione a categoria"
-                  placeholderTextColor={Colors.text.light}
-                  value={formData.category}
-                  editable={false}
-                />
-                <ChevronDown size={20} color={Colors.text.secondary} />
-              </View>
+              <TouchableOpacity 
+                style={styles.selectContainer}
+                onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+              >
+                <Text style={[
+                  styles.selectText,
+                  !formData.category && styles.placeholderText
+                ]}>
+                  {formData.category || 'Selecione a categoria'}
+                </Text>
+                <ChevronDown size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+              
+              {showCategoryPicker && (
+                <View style={styles.categoryPicker}>
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={styles.categoryOption}
+                      onPress={() => {
+                        handleInputChange('category', category.nome);
+                        setShowCategoryPicker(false);
+                      }}
+                    >
+                      <Text style={styles.categoryOptionText}>{category.nome}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -192,7 +255,7 @@ export default function RegisterBusinessScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Rua, número, bairro, cidade"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.address}
                 onChangeText={(value) => handleInputChange('address', value)}
                 autoCapitalize="words"
@@ -204,7 +267,7 @@ export default function RegisterBusinessScreen() {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Descreva seu estabelecimento..."
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.description}
                 onChangeText={(value) => handleInputChange('description', value)}
                 multiline
@@ -219,22 +282,21 @@ export default function RegisterBusinessScreen() {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder="Digite sua senha"
-                  placeholderTextColor={Colors.text.light}
+                  placeholderTextColor={Colors.textSecondary}
                   value={formData.password}
                   onChangeText={(value) => handleInputChange('password', value)}
                   secureTextEntry={!showPassword}
                 />
-                <Button
-                  title=""
+                <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeButton}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color={Colors.text.secondary} />
+                    <EyeOff size={20} color={Colors.textSecondary} />
                   ) : (
-                    <Eye size={20} color={Colors.text.secondary} />
+                    <Eye size={20} color={Colors.textSecondary} />
                   )}
-                </Button>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -244,22 +306,21 @@ export default function RegisterBusinessScreen() {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder="Confirme sua senha"
-                  placeholderTextColor={Colors.text.light}
+                  placeholderTextColor={Colors.textSecondary}
                   value={formData.confirmPassword}
                   onChangeText={(value) => handleInputChange('confirmPassword', value)}
                   secureTextEntry={!showConfirmPassword}
                 />
-                <Button
-                  title=""
+                <TouchableOpacity
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   style={styles.eyeButton}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff size={20} color={Colors.text.secondary} />
+                    <EyeOff size={20} color={Colors.textSecondary} />
                   ) : (
-                    <Eye size={20} color={Colors.text.secondary} />
+                    <Eye size={20} color={Colors.textSecondary} />
                   )}
-                </Button>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -279,7 +340,7 @@ export default function RegisterBusinessScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.backgroundProfile,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
@@ -290,15 +351,28 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text.primary,
+    fontFamily: Fonts.bold,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     marginBottom: 32,
     lineHeight: 24,
+    fontFamily: Fonts.regular,
+  },
+  errorContainer: {
+    backgroundColor: `${Colors.error}20`,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
   },
   form: {
     gap: 20,
@@ -308,17 +382,18 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text.primary,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textPrimary,
   },
   input: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: Colors.textPrimary,
     borderWidth: 1,
     borderColor: Colors.border,
+    fontFamily: Fonts.regular,
   },
   textArea: {
     height: 100,
@@ -326,22 +401,44 @@ const styles = StyleSheet.create({
   selectContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background.primary,
+    justifyContent: 'space-between',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingRight: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
-  selectInput: {
-    flex: 1,
-    padding: 16,
+  selectText: {
     fontSize: 16,
-    color: Colors.text.primary,
+    color: Colors.textPrimary,
+    fontFamily: Fonts.regular,
+  },
+  placeholderText: {
+    color: Colors.textSecondary,
+  },
+  categoryPicker: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginTop: 4,
+    maxHeight: 200,
+  },
+  categoryOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  categoryOptionText: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+    fontFamily: Fonts.regular,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -350,13 +447,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: Colors.textPrimary,
+    fontFamily: Fonts.regular,
   },
   eyeButton: {
-    backgroundColor: 'transparent',
     paddingHorizontal: 16,
-    paddingVertical: 0,
-    minWidth: 'auto',
+    paddingVertical: 16,
   },
   registerButton: {
     marginTop: 12,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,105 +9,109 @@ import {
   ScrollView,
   SafeAreaView,
   Platform,
-  Image
+  Image,
+  ActivityIndicator
 } from 'react-native';
 import { Search, Filter, TrendingUp, Users, Star, MessageSquare } from 'lucide-react-native';
 import EstablishmentCard from '@/components/EstablishmentCard';
 import { Colors, Fonts } from '@/constants/Colors';
-import { establishments, getCurrentUser, getBusinessEstablishment, getEstablishmentRatings } from '@/utils/mockData';
+import { useAuth } from '@/context/AuthContext';
+import { apiService } from '@/services/api';
+import { useApi } from '@/hooks/useApi';
+import { Establishment } from '@/types';
 
 export default function HomeScreen() {
-  const currentUser = getCurrentUser();
-  const isBusinessUser = currentUser.type === 'business';
+  const { user } = useAuth();
+  const isBusinessUser = user?.type === 'business';
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('Todos');
+  const [categories, setCategories] = useState<string[]>(['Todos']);
 
-  const filters = ['Todos', 'Restaurante', 'Café', 'Bar', 'Padaria', 'Mercado'];
+  // Load establishments
+  const { 
+    data: establishments, 
+    loading: establishmentsLoading, 
+    error: establishmentsError,
+    execute: loadEstablishments 
+  } = useApi<Establishment[]>(
+    () => apiService.getEstabelecimentos({
+      search: searchQuery || undefined,
+      tipo: activeFilter !== 'Todos' ? activeFilter : undefined
+    }),
+    { immediate: false }
+  );
 
-  const filteredEstablishments = establishments.filter(establishment => {
-    const matchesSearch = establishment.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === 'Todos' || establishment.category === activeFilter;
-    return matchesSearch && matchesFilter;
-  });
+  // Load categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const tipos = await apiService.getTipos();
+        setCategories(['Todos', ...tipos.map(tipo => tipo.nome)]);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        setCategories(['Todos', 'Restaurante', 'Café', 'Bar', 'Padaria', 'Mercado']);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Load establishments when filters change
+  useEffect(() => {
+    loadEstablishments();
+  }, [searchQuery, activeFilter, loadEstablishments]);
 
   if (isBusinessUser) {
-    const establishment = currentUser.businessId ? getBusinessEstablishment(currentUser.businessId) : null;
-    const ratings = establishment ? getEstablishmentRatings(establishment.id) : [];
-
-    if (!establishment) {
-      return (
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Estabelecimento não encontrado</Text>
-          </View>
-        </SafeAreaView>
-      );
-    }
-
+    // Business dashboard - simplified for now
     return (
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           <View style={styles.businessContent}>
             <View style={styles.businessHeader}>
               <Image
-                source={{ uri: establishment.imageUrl }}
+                source={{ uri: 'https://images.pexels.com/photos/1855214/pexels-photo-1855214.jpeg?auto=compress&cs=tinysrgb&w=800' }}
                 style={styles.businessImage}
                 resizeMode="cover"
               />
               <View style={styles.businessInfo}>
-                <Text style={styles.businessName}>{establishment.name}</Text>
-                <Text style={styles.businessCategory}>{establishment.category}</Text>
-                <Text style={styles.businessAddress}>{establishment.address}</Text>
+                <Text style={styles.businessName}>{user.name}</Text>
+                <Text style={styles.businessCategory}>Estabelecimento</Text>
+                <Text style={styles.businessAddress}>Dashboard do Negócio</Text>
               </View>
             </View>
 
             <View style={styles.dashboardGrid}>
               <View style={styles.dashboardCard}>
                 <Star size={24} color={Colors.primary} />
-                <Text style={styles.dashboardValue}>{establishment.averageRating.toFixed(1)}</Text>
+                <Text style={styles.dashboardValue}>4.5</Text>
                 <Text style={styles.dashboardLabel}>Avaliação Média</Text>
               </View>
               
               <View style={styles.dashboardCard}>
                 <MessageSquare size={24} color={Colors.success} />
-                <Text style={styles.dashboardValue}>{establishment.numRatings}</Text>
+                <Text style={styles.dashboardValue}>0</Text>
                 <Text style={styles.dashboardLabel}>Avaliações</Text>
               </View>
               
               <View style={styles.dashboardCard}>
                 <Users size={24} color={Colors.primary} />
-                <Text style={styles.dashboardValue}>1.2k</Text>
+                <Text style={styles.dashboardValue}>0</Text>
                 <Text style={styles.dashboardLabel}>Visualizações</Text>
               </View>
               
               <View style={styles.dashboardCard}>
                 <TrendingUp size={24} color={Colors.success} />
-                <Text style={styles.dashboardValue}>+8.5%</Text>
+                <Text style={styles.dashboardValue}>+0%</Text>
                 <Text style={styles.dashboardLabel}>Crescimento</Text>
               </View>
             </View>
 
             <View style={styles.recentSection}>
               <Text style={styles.sectionTitle}>Avaliações Recentes</Text>
-              {ratings.slice(0, 3).map((rating) => (
-                <View key={rating.id} style={styles.recentRatingCard}>
-                  <View style={styles.recentRatingHeader}>
-                    <View style={styles.ratingStars}>
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={16}
-                          color={i < rating.rating ? Colors.primary : Colors.textSecondary}
-                          fill={i < rating.rating ? Colors.primary : 'transparent'}
-                        />
-                      ))}
-                    </View>
-                    <Text style={styles.recentRatingDate}>{rating.date}</Text>
-                  </View>
-                  <Text style={styles.recentRatingComment}>{rating.comment}</Text>
-                </View>
-              ))}
+              <View style={styles.emptyState}>
+                <MessageSquare size={40} color={Colors.textSecondary} />
+                <Text style={styles.emptyStateText}>Nenhuma avaliação ainda</Text>
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -135,7 +139,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filtersContainer}
           >
-            {filters.map((filter) => (
+            {categories.map((filter) => (
               <TouchableOpacity
                 key={filter}
                 style={[
@@ -157,9 +161,21 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {filteredEstablishments.length > 0 ? (
+        {establishmentsLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Carregando estabelecimentos...</Text>
+          </View>
+        ) : establishmentsError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Erro ao carregar estabelecimentos</Text>
+            <TouchableOpacity onPress={loadEstablishments} style={styles.retryButton}>
+              <Text style={styles.retryText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        ) : establishments && establishments.length > 0 ? (
           <FlatList
-            data={filteredEstablishments}
+            data={establishments}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <EstablishmentCard establishment={item} />}
             showsVerticalScrollIndicator={false}
@@ -169,7 +185,7 @@ export default function HomeScreen() {
           <View style={styles.emptyContainer}>
             <Filter size={60} color={Colors.textSecondary} />
             <Text style={styles.emptyText}>
-              Nenhum estabelecimento encontrado para "{searchQuery}"
+              Nenhum estabelecimento encontrado
             </Text>
             <Text style={styles.emptySubtext}>
               Tente buscar com termos diferentes ou alterar o filtro
@@ -189,17 +205,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    fontSize: 18,
-    fontFamily: Fonts.semiBold,
-    color: Colors.textSecondary,
   },
   businessContent: {
     padding: 16,
@@ -289,32 +294,15 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: 16,
   },
-  recentRatingCard: {
-    backgroundColor: Colors.backgroundProfile,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  recentRatingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  emptyState: {
     alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 32,
   },
-  ratingStars: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  recentRatingDate: {
-    fontSize: 12,
+  emptyStateText: {
+    fontSize: 16,
     fontFamily: Fonts.regular,
     color: Colors.textSecondary,
-  },
-  recentRatingComment: {
-    fontSize: 14,
-    fontFamily: Fonts.regular,
-    color: Colors.textSecondary,
-    lineHeight: 20,
+    marginTop: 12,
   },
   header: {
     backgroundColor: Colors.backgroundProfile,
@@ -370,6 +358,42 @@ const styles = StyleSheet.create({
   },
   activeFilterText: {
     color: Colors.white,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.textSecondary,
+    marginTop: 12,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 18,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontFamily: Fonts.medium,
   },
   listContainer: {
     padding: 16,

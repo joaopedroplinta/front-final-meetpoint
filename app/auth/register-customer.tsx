@@ -12,10 +12,12 @@ import {
 import { useRouter } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
 import Button from '@/components/Button';
-import Colors from '@/constants/Colors';
+import { Colors, Fonts } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterCustomerScreen() {
   const router = useRouter();
+  const { register, loading, error } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,7 +27,6 @@ export default function RegisterCustomerScreen() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -55,17 +56,21 @@ export default function RegisterCustomerScreen() {
     return true;
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!validateForm()) return;
 
-    setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        userType: 'customer'
+      });
+      
       Alert.alert(
         'Cadastro realizado!',
-        'Sua conta foi criada com sucesso. Bem-vindo ao RateSpot!',
+        'Sua conta foi criada com sucesso. Bem-vindo ao MeetPoint!',
         [
           {
             text: 'OK',
@@ -73,7 +78,9 @@ export default function RegisterCustomerScreen() {
           },
         ]
       );
-    }, 2000);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível criar sua conta. Tente novamente.');
+    }
   };
 
   return (
@@ -85,13 +92,19 @@ export default function RegisterCustomerScreen() {
             Preencha os dados abaixo para criar sua conta
           </Text>
 
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Nome completo</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Digite seu nome completo"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.name}
                 onChangeText={(value) => handleInputChange('name', value)}
                 autoCapitalize="words"
@@ -103,7 +116,7 @@ export default function RegisterCustomerScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Digite seu email"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.email}
                 onChangeText={(value) => handleInputChange('email', value)}
                 keyboardType="email-address"
@@ -116,7 +129,7 @@ export default function RegisterCustomerScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="(11) 99999-9999"
-                placeholderTextColor={Colors.text.light}
+                placeholderTextColor={Colors.textSecondary}
                 value={formData.phone}
                 onChangeText={(value) => handleInputChange('phone', value)}
                 keyboardType="phone-pad"
@@ -129,7 +142,7 @@ export default function RegisterCustomerScreen() {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder="Digite sua senha"
-                  placeholderTextColor={Colors.text.light}
+                  placeholderTextColor={Colors.textSecondary}
                   value={formData.password}
                   onChangeText={(value) => handleInputChange('password', value)}
                   secureTextEntry={!showPassword}
@@ -140,9 +153,9 @@ export default function RegisterCustomerScreen() {
                   style={styles.eyeButton}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color={Colors.text.secondary} />
+                    <EyeOff size={20} color={Colors.textSecondary} />
                   ) : (
-                    <Eye size={20} color={Colors.text.secondary} />
+                    <Eye size={20} color={Colors.textSecondary} />
                   )}
                 </Button>
               </View>
@@ -154,7 +167,7 @@ export default function RegisterCustomerScreen() {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder="Confirme sua senha"
-                  placeholderTextColor={Colors.text.light}
+                  placeholderTextColor={Colors.textSecondary}
                   value={formData.confirmPassword}
                   onChangeText={(value) => handleInputChange('confirmPassword', value)}
                   secureTextEntry={!showConfirmPassword}
@@ -165,9 +178,9 @@ export default function RegisterCustomerScreen() {
                   style={styles.eyeButton}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff size={20} color={Colors.text.secondary} />
+                    <EyeOff size={20} color={Colors.textSecondary} />
                   ) : (
-                    <Eye size={20} color={Colors.text.secondary} />
+                    <Eye size={20} color={Colors.textSecondary} />
                   )}
                 </Button>
               </View>
@@ -189,7 +202,7 @@ export default function RegisterCustomerScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.backgroundProfile,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
@@ -200,15 +213,28 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text.primary,
+    fontFamily: Fonts.bold,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     marginBottom: 32,
     lineHeight: 24,
+    fontFamily: Fonts.regular,
+  },
+  errorContainer: {
+    backgroundColor: `${Colors.error}20`,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
   },
   form: {
     gap: 20,
@@ -218,22 +244,23 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text.primary,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textPrimary,
   },
   input: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: Colors.textPrimary,
     borderWidth: 1,
     borderColor: Colors.border,
+    fontFamily: Fonts.regular,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -242,7 +269,8 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: Colors.textPrimary,
+    fontFamily: Fonts.regular,
   },
   eyeButton: {
     backgroundColor: 'transparent',

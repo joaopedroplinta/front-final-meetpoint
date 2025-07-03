@@ -1,6 +1,6 @@
 import { Establishment, Rating, User } from '@/types';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.meetpoint.com';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -30,7 +30,8 @@ class ApiService {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        throw new ApiError(response.status, `HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new ApiError(response.status, errorText || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -44,224 +45,246 @@ class ApiService {
   }
 
   private async getAuthToken(): Promise<string | null> {
-    // In a real app, you'd get this from secure storage
-    // For now, we'll use a simple storage mechanism
     try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('auth_token');
+      }
       const { getItem } = await import('expo-secure-store');
       return await getItem('auth_token');
     } catch {
-      // Fallback for web
-      return localStorage.getItem('auth_token');
+      return null;
     }
   }
 
   private async setAuthToken(token: string): Promise<void> {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', token);
+        return;
+      }
       const { setItem } = await import('expo-secure-store');
       await setItem('auth_token', token);
-    } catch {
-      // Fallback for web
-      localStorage.setItem('auth_token', token);
+    } catch (error) {
+      console.error('Failed to store auth token:', error);
     }
   }
 
   private async removeAuthToken(): Promise<void> {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        return;
+      }
       const { deleteItemAsync } = await import('expo-secure-store');
       await deleteItemAsync('auth_token');
-    } catch {
-      // Fallback for web
-      localStorage.removeItem('auth_token');
+    } catch (error) {
+      console.error('Failed to remove auth token:', error);
     }
   }
 
   // Auth endpoints
-  async login(email: string, password: string, userType: 'customer' | 'business'): Promise<{ user: User; token: string }> {
-    const response = await this.request<{ user: User; token: string }>('/auth/login', {
+  async loginCliente(email: string, password: string): Promise<{ cliente: User; token: string }> {
+    const response = await this.request<{ cliente: User; token: string }>('/clientes/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password, userType }),
+      body: JSON.stringify({ email, senha: password }),
     });
     
-    await this.setAuthToken(response.token);
+    if (response.token) {
+      await this.setAuthToken(response.token);
+    }
     return response;
   }
 
-  async register(userData: {
-    name: string;
+  async loginEstabelecimento(email: string, password: string): Promise<{ estabelecimento: User; token: string }> {
+    const response = await this.request<{ estabelecimento: User; token: string }>('/estabelecimentos/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, senha: password }),
+    });
+    
+    if (response.token) {
+      await this.setAuthToken(response.token);
+    }
+    return response;
+  }
+
+  async registerCliente(userData: {
+    nome: string;
     email: string;
-    password: string;
-    phone?: string;
-    userType: 'customer' | 'business';
-    businessData?: {
-      businessName: string;
-      cnpj: string;
-      category: string;
-      address: string;
-      description?: string;
-    };
-  }): Promise<{ user: User; token: string }> {
-    const response = await this.request<{ user: User; token: string }>('/auth/register', {
+    senha: string;
+    telefone?: string;
+  }): Promise<{ cliente: User; token: string }> {
+    const response = await this.request<{ cliente: User; token: string }>('/clientes', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
     
-    await this.setAuthToken(response.token);
+    if (response.token) {
+      await this.setAuthToken(response.token);
+    }
+    return response;
+  }
+
+  async registerEstabelecimento(userData: {
+    nome: string;
+    email: string;
+    senha: string;
+    telefone?: string;
+    cnpj: string;
+    endereco: string;
+    descricao?: string;
+    tipo_id: number;
+  }): Promise<{ estabelecimento: User; token: string }> {
+    const response = await this.request<{ estabelecimento: User; token: string }>('/estabelecimentos', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+    
+    if (response.token) {
+      await this.setAuthToken(response.token);
+    }
     return response;
   }
 
   async logout(): Promise<void> {
-    await this.request('/auth/logout', { method: 'POST' });
     await this.removeAuthToken();
   }
 
-  async getCurrentUser(): Promise<User> {
-    return this.request<User>('/auth/me');
-  }
-
   // Establishments endpoints
-  async getEstablishments(params?: {
+  async getEstabelecimentos(params?: {
     search?: string;
-    category?: string;
+    tipo?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ establishments: Establishment[]; total: number; page: number; totalPages: number }> {
+  }): Promise<Establishment[]> {
     const searchParams = new URLSearchParams();
     if (params?.search) searchParams.append('search', params.search);
-    if (params?.category && params.category !== 'Todos') searchParams.append('category', params.category);
+    if (params?.tipo && params.tipo !== 'Todos') searchParams.append('tipo', params.tipo);
     if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.limit) searchParams.append('limit', params.limit.toString());
 
     const query = searchParams.toString();
-    return this.request<{ establishments: Establishment[]; total: number; page: number; totalPages: number }>(
-      `/establishments${query ? `?${query}` : ''}`
+    return this.request<Establishment[]>(
+      `/estabelecimentos${query ? `?${query}` : ''}`
     );
   }
 
-  async getEstablishmentById(id: string): Promise<Establishment> {
-    return this.request<Establishment>(`/establishments/${id}`);
+  async getEstabelecimentoById(id: string): Promise<Establishment> {
+    return this.request<Establishment>(`/estabelecimento/${id}`);
   }
 
-  async updateEstablishment(id: string, data: Partial<Establishment>): Promise<Establishment> {
-    return this.request<Establishment>(`/establishments/${id}`, {
+  async updateEstabelecimento(id: string, data: Partial<Establishment>): Promise<Establishment> {
+    return this.request<Establishment>(`/estabelecimentos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   // Ratings endpoints
-  async getRatings(establishmentId: string, params?: {
-    page?: number;
-    limit?: number;
-    filter?: 'all' | 'high' | 'low';
-  }): Promise<{ ratings: Rating[]; total: number; page: number; totalPages: number }> {
-    const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.append('page', params.page.toString());
-    if (params?.limit) searchParams.append('limit', params.limit.toString());
-    if (params?.filter && params.filter !== 'all') searchParams.append('filter', params.filter);
-
-    const query = searchParams.toString();
-    return this.request<{ ratings: Rating[]; total: number; page: number; totalPages: number }>(
-      `/establishments/${establishmentId}/ratings${query ? `?${query}` : ''}`
-    );
+  async getAvaliacoesByEstabelecimento(estabelecimentoId: string): Promise<Rating[]> {
+    return this.request<Rating[]>(`/estabelecimentos/${estabelecimentoId}/avaliacoes`);
   }
 
-  async getUserRatings(userId?: string): Promise<Rating[]> {
-    const endpoint = userId ? `/users/${userId}/ratings` : '/ratings/me';
-    return this.request<Rating[]>(endpoint);
-  }
-
-  async createRating(establishmentId: string, data: {
-    rating: number;
-    comment?: string;
+  async createAvaliacao(data: {
+    estabelecimento_id: string;
+    cliente_id: string;
+    nota: number;
+    comentario?: string;
   }): Promise<Rating> {
-    return this.request<Rating>(`/establishments/${establishmentId}/ratings`, {
+    return this.request<Rating>('/avaliacoes', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateRating(ratingId: string, data: {
-    rating: number;
-    comment?: string;
+  async updateAvaliacao(avaliacaoId: string, data: {
+    nota: number;
+    comentario?: string;
   }): Promise<Rating> {
-    return this.request<Rating>(`/ratings/${ratingId}`, {
+    return this.request<Rating>(`/avaliacoes/${avaliacaoId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteRating(ratingId: string): Promise<void> {
-    await this.request(`/ratings/${ratingId}`, { method: 'DELETE' });
+  async deleteAvaliacao(avaliacaoId: string): Promise<void> {
+    await this.request(`/avaliacoes/${avaliacaoId}`, { method: 'DELETE' });
   }
 
   // User profile endpoints
-  async updateProfile(data: {
-    name?: string;
+  async getClienteById(id: string): Promise<User> {
+    return this.request<User>(`/clientes/${id}`);
+  }
+
+  async updateCliente(id: string, data: {
+    nome?: string;
     email?: string;
-    phone?: string;
-    avatar?: string;
+    telefone?: string;
   }): Promise<User> {
-    return this.request<User>('/users/profile', {
+    return this.request<User>(`/clientes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async changePassword(data: {
-    currentPassword: string;
-    newPassword: string;
-  }): Promise<void> {
-    await this.request('/users/change-password', {
+  // Tipos endpoints
+  async getTipos(): Promise<{ id: number; nome: string; descricao?: string }[]> {
+    return this.request<{ id: number; nome: string; descricao?: string }[]>('/tipos');
+  }
+
+  async getTipoById(id: string): Promise<{ id: number; nome: string; descricao?: string }> {
+    return this.request<{ id: number; nome: string; descricao?: string }>(`/tipos/${id}`);
+  }
+
+  // Comentarios endpoints
+  async getComentarios(): Promise<any[]> {
+    return this.request<any[]>('/comentarios');
+  }
+
+  async createComentario(data: {
+    avaliacao_id: string;
+    cliente_id: string;
+    texto: string;
+  }): Promise<any> {
+    return this.request<any>('/comentarios', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  // Analytics endpoints (for business users)
-  async getBusinessAnalytics(establishmentId: string, params?: {
-    period?: 'week' | 'month' | 'year';
-  }): Promise<{
-    averageRating: number;
-    totalRatings: number;
-    ratingDistribution: { [key: number]: number };
-    recentRatings: Rating[];
-    views: number;
-    growth: number;
-  }> {
-    const searchParams = new URLSearchParams();
-    if (params?.period) searchParams.append('period', params.period);
-
-    const query = searchParams.toString();
-    return this.request<{
-      averageRating: number;
-      totalRatings: number;
-      ratingDistribution: { [key: number]: number };
-      recentRatings: Rating[];
-      views: number;
-      growth: number;
-    }>(`/establishments/${establishmentId}/analytics${query ? `?${query}` : ''}`);
+  // Destaques endpoints
+  async getDestaques(): Promise<any[]> {
+    return this.request<any[]>('/destaques');
   }
 
-  // Upload endpoints
-  async uploadImage(file: File | Blob, type: 'avatar' | 'establishment'): Promise<{ url: string }> {
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('type', type);
-
-    const token = await this.getAuthToken();
-    const response = await fetch(`${API_BASE_URL}/upload/image`, {
+  async createDestaque(data: {
+    estabelecimento_id: string;
+    titulo: string;
+    descricao: string;
+    data_inicio: string;
+    data_fim: string;
+  }): Promise<any> {
+    return this.request<any>('/destaques', {
       method: 'POST',
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: formData,
+      body: JSON.stringify(data),
     });
+  }
 
-    if (!response.ok) {
-      throw new ApiError(response.status, 'Failed to upload image');
-    }
+  // Items endpoints
+  async getItems(): Promise<any[]> {
+    return this.request<any[]>('/items');
+  }
 
-    return response.json();
+  async createItem(data: {
+    estabelecimento_id: string;
+    nome: string;
+    descricao?: string;
+    preco: number;
+    categoria: string;
+  }): Promise<any> {
+    return this.request<any>('/items', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 }
 

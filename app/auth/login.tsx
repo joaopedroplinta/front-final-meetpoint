@@ -13,17 +13,17 @@ import { useRouter } from 'expo-router';
 import { Eye, EyeOff, User, Store } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { Colors, Fonts } from '@/constants/Colors';
-import { authenticateUser } from '@/utils/mockData';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login, loading, error } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [userType, setUserType] = useState<'customer' | 'business'>('customer');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -41,36 +41,22 @@ export default function LoginScreen() {
     return true;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!validateForm()) return;
 
-    setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const user = authenticateUser(formData.email, formData.password);
-      
-      if (user && user.type === userType) {
-        setLoading(false);
-        router.replace('/(tabs)');
-      } else if (user && user.type !== userType) {
-        setLoading(false);
-        Alert.alert(
-          'Tipo de conta incorreto', 
-          `Esta conta é do tipo ${user.type === 'customer' ? 'Cliente' : 'Estabelecimento'}. Selecione o tipo correto.`
-        );
-      } else {
-        setLoading(false);
-        Alert.alert('Erro', 'Email ou senha incorretos');
-      }
-    }, 1500);
+    try {
+      await login(formData.email, formData.password, userType);
+      router.replace('/(tabs)');
+    } catch (error) {
+      Alert.alert('Erro', 'Email ou senha incorretos');
+    }
   };
 
   const getPlaceholderEmails = () => {
     if (userType === 'customer') {
-      return 'joao@example.com ou maria@example.com';
+      return 'seu@email.com';
     } else {
-      return 'carlos@cafesublime.com ou ana@restauranteoliveira.com';
+      return 'estabelecimento@email.com';
     }
   };
 
@@ -82,6 +68,12 @@ export default function LoginScreen() {
           <Text style={styles.subtitle}>
             Entre com suas credenciais para acessar sua conta
           </Text>
+
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
           <View style={styles.userTypeContainer}>
             <Text style={styles.userTypeLabel}>Tipo de conta</Text>
@@ -215,6 +207,18 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     lineHeight: 24,
     fontFamily: Fonts.regular,
+  },
+  errorContainer: {
+    backgroundColor: `${Colors.error}20`,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
   },
   userTypeContainer: {
     marginBottom: 24,
