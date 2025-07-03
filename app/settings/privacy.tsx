@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
-import Colors from '@/constants/Colors';
+import { Colors, Fonts } from '@/constants/Colors';
 
 export default function PrivacyScreen() {
   const [privacy, setPrivacy] = useState({
@@ -72,7 +72,7 @@ export default function PrivacyScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.description}>
-            Controle como suas informações são compartilhadas e usadas no RateSpot.
+            Controle como suas informações são compartilhadas e usadas no MeetPoint.
           </Text>
 
           <View style={styles.section}>
@@ -94,10 +94,10 @@ export default function PrivacyScreen() {
                     value={item.value}
                     onValueChange={() => handleToggle(item.key)}
                     trackColor={{ 
-                      false: Colors.text.light, 
-                      true: Colors.primaryLight 
+                      false: Colors.textSecondary, 
+                      true: `${Colors.primary}60`
                     }}
-                    thumbColor={item.value ? Colors.primary : Colors.background.primary}
+                    thumbColor={item.value ? Colors.primary : Colors.background}
                   />
                 </View>
               ))}
@@ -121,7 +121,7 @@ export default function PrivacyScreen() {
                     <Text style={styles.linkTitle}>{link.title}</Text>
                     <Text style={styles.linkSubtitle}>{link.subtitle}</Text>
                   </View>
-                  <ChevronRight size={20} color={Colors.text.light} />
+                  <ChevronRight size={20} color={Colors.textSecondary} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -135,7 +135,7 @@ export default function PrivacyScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.backgroundProfile,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
@@ -146,21 +146,22 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     lineHeight: 24,
     marginBottom: 24,
+    fontFamily: Fonts.regular,
   },
   section: {
     marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text.primary,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   privacyContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: Colors.shadow,
@@ -186,17 +187,18 @@ const styles = StyleSheet.create({
   },
   privacyTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.primary,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   privacySubtitle: {
     fontSize: 12,
-    color: Colors.text.light,
+    color: Colors.textSecondary,
     lineHeight: 16,
+    fontFamily: Fonts.regular,
   },
   linksContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: Colors.shadow,
@@ -221,12 +223,13 @@ const styles = StyleSheet.create({
   },
   linkTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.primary,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   linkSubtitle: {
     fontSize: 12,
-    color: Colors.text.light,
+    color: Colors.textSecondary,
+    fontFamily: Fonts.regular,
   },
 });

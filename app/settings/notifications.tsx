@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, ScrollView, SafeAreaView, Platform } from 'react-native';
-import Colors from '@/constants/Colors';
+import { Colors, Fonts } from '@/constants/Colors';
 
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState({
@@ -63,7 +63,7 @@ export default function NotificationsScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.description}>
-            Configure como e quando você deseja receber notificações do RateSpot.
+            Configure como e quando você deseja receber notificações do MeetPoint.
           </Text>
 
           <View style={styles.notificationsContainer}>
@@ -83,10 +83,10 @@ export default function NotificationsScreen() {
                   value={item.value}
                   onValueChange={() => handleToggle(item.key)}
                   trackColor={{ 
-                    false: Colors.text.light, 
-                    true: Colors.primaryLight 
+                    false: Colors.textSecondary, 
+                    true: `${Colors.primary}60`
                   }}
-                  thumbColor={item.value ? Colors.primary : Colors.background.primary}
+                  thumbColor={item.value ? Colors.primary : Colors.background}
                 />
               </View>
             ))}
@@ -108,7 +108,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.backgroundProfile,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
@@ -119,12 +119,13 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     lineHeight: 24,
     marginBottom: 24,
+    fontFamily: Fonts.regular,
   },
   notificationsContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 24,
@@ -151,17 +152,18 @@ const styles = StyleSheet.create({
   },
   notificationTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.primary,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   notificationSubtitle: {
     fontSize: 12,
-    color: Colors.text.light,
+    color: Colors.textSecondary,
     lineHeight: 16,
+    fontFamily: Fonts.regular,
   },
   infoContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     padding: 20,
     shadowColor: Colors.shadow,
@@ -172,13 +174,14 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text.primary,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     lineHeight: 20,
+    fontFamily: Fonts.regular,
   },
 });

@@ -7,35 +7,35 @@ import {
   Shield, 
   CircleHelp as HelpCircle, 
   ChevronRight,
-  Star,
+  MapPin,
   LogOut
 } from 'lucide-react-native';
-import Colors from '@/constants/Colors';
+import { Colors, Fonts } from '@/constants/Colors';
 
 export default function SettingsScreen() {
   const router = useRouter();
 
   const settingsItems = [
     {
-      icon: <User size={24} color={Colors.text.secondary} />,
+      icon: <User size={24} color={Colors.textSecondary} />,
       title: 'Conta',
       subtitle: 'Gerenciar informações pessoais',
       onPress: () => router.push('/settings/account'),
     },
     {
-      icon: <Bell size={24} color={Colors.text.secondary} />,
+      icon: <Bell size={24} color={Colors.textSecondary} />,
       title: 'Notificações',
       subtitle: 'Configurar alertas e lembretes',
       onPress: () => router.push('/settings/notifications'),
     },
     {
-      icon: <Shield size={24} color={Colors.text.secondary} />,
+      icon: <Shield size={24} color={Colors.textSecondary} />,
       title: 'Privacidade',
       subtitle: 'Controlar dados e privacidade',
       onPress: () => router.push('/settings/privacy'),
     },
     {
-      icon: <HelpCircle size={24} color={Colors.text.secondary} />,
+      icon: <HelpCircle size={24} color={Colors.textSecondary} />,
       title: 'Ajuda',
       subtitle: 'Suporte e perguntas frequentes',
       onPress: () => router.push('/settings/help'),
@@ -52,9 +52,9 @@ export default function SettingsScreen() {
         <View style={styles.content}>
           <View style={styles.appInfoContainer}>
             <View style={styles.appIconContainer}>
-              <Star size={32} color={Colors.primary} fill={Colors.primary} />
+              <MapPin size={32} color={Colors.primary} fill={Colors.primary} />
             </View>
-            <Text style={styles.appName}>RateSpot</Text>
+            <Text style={styles.appName}>MeetPoint</Text>
             <Text style={styles.appVersion}>Versão 1.0.0</Text>
           </View>
 
@@ -76,7 +76,7 @@ export default function SettingsScreen() {
                   <Text style={styles.menuTitle}>{item.title}</Text>
                   <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
                 </View>
-                <ChevronRight size={20} color={Colors.text.light} />
+                <ChevronRight size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
             ))}
           </View>
@@ -100,7 +100,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.backgroundProfile,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   appInfoContainer: {
     alignItems: 'center',
     paddingVertical: 32,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     marginBottom: 24,
     shadowColor: Colors.shadow,
@@ -125,23 +125,24 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: `${Colors.primary}20`,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
   appName: {
     fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text.primary,
+    fontFamily: Fonts.bold,
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   appVersion: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
+    fontFamily: Fonts.regular,
   },
   menuContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 24,
@@ -173,18 +174,19 @@ const styles = StyleSheet.create({
   },
   menuTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.primary,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   menuSubtitle: {
     fontSize: 12,
-    color: Colors.text.light,
+    color: Colors.textSecondary,
+    fontFamily: Fonts.regular,
   },
   logoutContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     padding: 16,
     shadowColor: Colors.shadow,
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: Fonts.medium,
     color: Colors.error,
   },
 });

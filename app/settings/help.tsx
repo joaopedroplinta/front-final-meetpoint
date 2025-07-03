@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Platform, Linking } from 'react-native';
-import { ChevronRight, Mail, MessageCircle, Phone } from 'lucide-react-native';
-import Colors from '@/constants/Colors';
+import { ChevronRight, Mail, MessageCircle, Phone, MapPin } from 'lucide-react-native';
+import { Colors, Fonts } from '@/constants/Colors';
 
 export default function HelpScreen() {
   const faqItems = [
@@ -31,8 +31,8 @@ export default function HelpScreen() {
     {
       icon: <Mail size={24} color={Colors.primary} />,
       title: 'Email',
-      subtitle: 'suporte@ratespot.com',
-      onPress: () => Linking.openURL('mailto:suporte@ratespot.com'),
+      subtitle: 'suporte@meetpoint.com',
+      onPress: () => Linking.openURL('mailto:suporte@meetpoint.com'),
     },
     {
       icon: <MessageCircle size={24} color={Colors.primary} />,
@@ -93,17 +93,21 @@ export default function HelpScreen() {
                     <Text style={styles.contactTitle}>{option.title}</Text>
                     <Text style={styles.contactSubtitle}>{option.subtitle}</Text>
                   </View>
-                  <ChevronRight size={20} color={Colors.text.light} />
+                  <ChevronRight size={20} color={Colors.textSecondary} />
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Sobre o RateSpot</Text>
+            <Text style={styles.sectionTitle}>Sobre o MeetPoint</Text>
             <View style={styles.aboutContainer}>
+              <View style={styles.logoContainer}>
+                <MapPin size={40} color={Colors.primary} fill={Colors.primary} />
+                <Text style={styles.logoText}>MeetPoint</Text>
+              </View>
               <Text style={styles.aboutText}>
-                O RateSpot é uma plataforma que conecta pessoas aos melhores estabelecimentos da sua região. 
+                O MeetPoint é uma plataforma que conecta pessoas aos melhores estabelecimentos da sua região. 
                 Nossa missão é ajudar você a descobrir novos lugares e compartilhar suas experiências.
               </Text>
               <Text style={styles.aboutVersion}>
@@ -120,7 +124,7 @@ export default function HelpScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.backgroundProfile,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
@@ -134,12 +138,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text.primary,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   faqContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: Colors.shadow,
@@ -158,23 +162,25 @@ const styles = StyleSheet.create({
   },
   question: {
     fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.primary,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   answer: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     lineHeight: 20,
+    fontFamily: Fonts.regular,
   },
   contactDescription: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     marginBottom: 16,
     lineHeight: 20,
+    fontFamily: Fonts.regular,
   },
   contactContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: Colors.shadow,
@@ -205,16 +211,17 @@ const styles = StyleSheet.create({
   },
   contactTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.primary,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   contactSubtitle: {
     fontSize: 12,
-    color: Colors.text.light,
+    color: Colors.textSecondary,
+    fontFamily: Fonts.regular,
   },
   aboutContainer: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     padding: 20,
     shadowColor: Colors.shadow,
@@ -222,16 +229,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+    alignItems: 'center',
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  logoText: {
+    fontSize: 24,
+    fontFamily: Fonts.bold,
+    color: Colors.primary,
+    marginLeft: 8,
   },
   aboutText: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: Colors.textSecondary,
     lineHeight: 20,
     marginBottom: 16,
+    textAlign: 'center',
+    fontFamily: Fonts.regular,
   },
   aboutVersion: {
     fontSize: 12,
-    color: Colors.text.light,
+    color: Colors.textSecondary,
     textAlign: 'center',
+    fontFamily: Fonts.regular,
   },
 });
