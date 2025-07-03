@@ -36,10 +36,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Stack 
-        screenOptions={{ headerShown: false }}
-        initialRouteName="welcome"
-      >
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         <Stack.Screen name="auth" options={{ animation: 'slide_from_right' }} />

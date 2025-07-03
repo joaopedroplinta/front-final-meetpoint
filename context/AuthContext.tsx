@@ -21,15 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Ensure user starts as null (not authenticated)
+  // Clear any stored auth tokens on app start to ensure clean state
   useEffect(() => {
-    // Clear any existing tokens on app start to ensure clean state
     const clearStoredAuth = async () => {
       try {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth_token');
         }
-        // For native platforms, you would clear AsyncStorage here
       } catch (error) {
         // Ignore errors - just ensure we start clean
       }
