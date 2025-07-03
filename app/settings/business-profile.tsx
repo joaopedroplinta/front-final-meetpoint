@@ -14,34 +14,32 @@ import {
 import { Camera, MapPin, Phone, Mail, FileText } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { Colors, Fonts } from '@/constants/Colors';
-import { getCurrentUser, getBusinessEstablishment } from '@/utils/mockData';
+import { useAuth } from '@/context/AuthContext';
 
 export default function BusinessProfileScreen() {
-  const currentUser = getCurrentUser();
-  const establishment = currentUser.type === 'business' && currentUser.businessId 
-    ? getBusinessEstablishment(currentUser.businessId) 
-    : null;
-
-  const [formData, setFormData] = useState({
-    name: establishment?.name || '',
-    category: establishment?.category || '',
-    address: establishment?.address || '',
-    phone: '(11) 99999-9999',
-    email: currentUser.email,
-    description: 'Estabelecimento com tradição e qualidade no atendimento.',
-    workingHours: 'Segunda a Sexta: 8h às 18h\nSábado: 8h às 14h',
-  });
-  const [loading, setLoading] = useState(false);
-
-  if (!establishment) {
+  const { user } = useAuth();
+  
+  // Only show this screen for business users
+  if (!user || user.type !== 'business') {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Estabelecimento não encontrado</Text>
+          <Text style={styles.errorText}>Acesso restrito a estabelecimentos</Text>
         </View>
       </SafeAreaView>
     );
   }
+
+  const [formData, setFormData] = useState({
+    name: user.name || '',
+    category: '',
+    address: '',
+    phone: '',
+    email: user.email || '',
+    description: '',
+    workingHours: '',
+  });
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -75,7 +73,7 @@ export default function BusinessProfileScreen() {
         <View style={styles.content}>
           <View style={styles.imageContainer}>
             <Image
-              source={{ uri: establishment.imageUrl }}
+              source={{ uri: user.avatar || 'https://images.pexels.com/photos/1855214/pexels-photo-1855214.jpeg?auto=compress&cs=tinysrgb&w=800' }}
               style={styles.establishmentImage}
             />
             <TouchableOpacity style={styles.cameraButton} onPress={handleChangeImage}>
@@ -184,7 +182,7 @@ export default function BusinessProfileScreen() {
                 style={[styles.input, styles.textArea]}
                 value={formData.workingHours}
                 onChangeText={(value) => handleInputChange('workingHours', value)}
-                placeholder="Horários de funcionamento..."
+                placeholder="Ex: Segunda a Sexta: 8h às 18h"
                 placeholderTextColor={Colors.textSecondary}
                 multiline
                 numberOfLines={3}

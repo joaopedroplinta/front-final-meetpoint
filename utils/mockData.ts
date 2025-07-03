@@ -135,13 +135,7 @@ export const ratings: Rating[] = [
   }
 ];
 
-// Current user state - in a real app this would be managed by a state management solution
-let currentUserId = '1'; // Default to customer user
-
-export const setCurrentUser = (userId: string) => {
-  currentUserId = userId;
-};
-
+// Helper functions - these are now only used for fallback/mock data
 export const getUserRatings = (userId: string): Rating[] => {
   return ratings.filter(rating => rating.userId === userId);
 };
@@ -154,24 +148,27 @@ export const getEstablishmentRatings = (establishmentId: string): Rating[] => {
   return ratings.filter(rating => rating.establishmentId === establishmentId);
 };
 
+// Deprecated functions - kept for backward compatibility but should not be used
 export const getCurrentUser = (): User => {
-  return users.find(user => user.id === currentUserId) || users[0];
+  console.warn('getCurrentUser from mockData is deprecated. Use useAuth hook instead.');
+  return users[0];
 };
 
 export const getUserByEmail = (email: string): User | undefined => {
+  console.warn('getUserByEmail from mockData is deprecated. Use API service instead.');
   return users.find(user => user.email === email);
 };
 
 export const getBusinessEstablishment = (businessId: string): Establishment | undefined => {
+  console.warn('getBusinessEstablishment from mockData is deprecated. Use API service instead.');
   return establishments.find(establishment => establishment.id === businessId);
 };
 
+export const setCurrentUser = (userId: string) => {
+  console.warn('setCurrentUser from mockData is deprecated. Use AuthContext instead.');
+};
+
 export const authenticateUser = (email: string, password: string): User | null => {
-  // Simple mock authentication - in real app this would validate against a backend
-  const user = getUserByEmail(email);
-  if (user) {
-    setCurrentUser(user.id);
-    return user;
-  }
+  console.warn('authenticateUser from mockData is deprecated. Use AuthContext login instead.');
   return null;
 };

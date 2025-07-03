@@ -4,19 +4,33 @@ import { useRouter } from 'expo-router';
 import { LogOut, Star, Settings, Bell, Shield, CircleHelp as HelpCircle, Store } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { Colors, Fonts } from '@/constants/Colors';
-import { getCurrentUser, getUserRatings, getBusinessEstablishment } from '@/utils/mockData';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const currentUser = getCurrentUser();
-  const userRatings = getUserRatings(currentUser.id);
-  const isBusinessUser = currentUser.type === 'business';
-  const establishment = isBusinessUser && currentUser.businessId 
-    ? getBusinessEstablishment(currentUser.businessId) 
-    : null;
+  const { user, logout } = useAuth();
+  
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Usuário não encontrado</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  const handleLogout = () => {
-    router.replace('/welcome');
+  const isBusinessUser = user.type === 'business';
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace('/welcome');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force navigation even if logout fails
+      router.replace('/welcome');
+    }
   };
 
   const businessMenuItems = [
@@ -86,49 +100,33 @@ export default function ProfileScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Image
-            source={{ uri: currentUser.avatar }}
+            source={{ uri: user.avatar }}
             style={styles.avatar}
           />
-          <Text style={styles.name}>{currentUser.name}</Text>
-          <Text style={styles.email}>{currentUser.email}</Text>
-          {isBusinessUser && establishment && (
+          <Text style={styles.name}>{user.name}</Text>
+          <Text style={styles.email}>{user.email}</Text>
+          {isBusinessUser && (
             <View style={styles.businessBadge}>
               <Store size={16} color={Colors.primary} />
-              <Text style={styles.businessName}>{establishment.name}</Text>
+              <Text style={styles.businessName}>Estabelecimento</Text>
             </View>
           )}
         </View>
 
         <View style={styles.statsContainer}>
-          {isBusinessUser && establishment ? (
-            <>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{establishment.numRatings}</Text>
-                <Text style={styles.statLabel}>Avaliações</Text>
-              </View>
-              <View style={styles.statCard}>
-                <View style={styles.ratingStatContainer}>
-                  <Text style={styles.statNumber}>{establishment.averageRating.toFixed(1)}</Text>
-                  <Star size={16} color={Colors.primary} fill={Colors.primary} style={styles.ratingStar} />
-                </View>
-                <Text style={styles.statLabel}>Média</Text>
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{userRatings.length}</Text>
-                <Text style={styles.statLabel}>Avaliações</Text>
-              </View>
-              <View style={styles.statCard}>
-                <View style={styles.ratingStatContainer}>
-                  <Text style={styles.statNumber}>4.5</Text>
-                  <Star size={16} color={Colors.primary} fill={Colors.primary} style={styles.ratingStar} />
-                </View>
-                <Text style={styles.statLabel}>Média</Text>
-              </View>
-            </>
-          )}
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statLabel}>
+              {isBusinessUser ? 'Avaliações' : 'Avaliações'}
+            </Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.ratingStatContainer}>
+              <Text style={styles.statNumber}>0.0</Text>
+              <Star size={16} color={Colors.textSecondary} style={styles.ratingStar} />
+            </View>
+            <Text style={styles.statLabel}>Média</Text>
+          </View>
         </View>
 
         <View style={styles.menuContainer}>
@@ -172,6 +170,17 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 18,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textSecondary,
   },
   header: {
     alignItems: 'center',

@@ -10,17 +10,18 @@ import {
   Alert,
   Image
 } from 'react-native';
-import { Camera, CreditCard as Edit3 } from 'lucide-react-native';
+import { Camera } from 'lucide-react-native';
 import Button from '@/components/Button';
-import Colors from '@/constants/Colors';
-import { getCurrentUser } from '@/utils/mockData';
+import { Colors, Fonts } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AccountScreen() {
-  const currentUser = getCurrentUser();
+  const { user } = useAuth();
+  
   const [formData, setFormData] = useState({
-    name: currentUser.name,
-    email: currentUser.email,
-    phone: '(11) 99999-9999',
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: '', // Remove pre-filled phone data
   });
   const [loading, setLoading] = useState(false);
 
@@ -49,17 +50,27 @@ export default function AccountScreen() {
     );
   };
 
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Usuário não encontrado</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{ uri: currentUser.avatar }}
+              source={{ uri: user.avatar }}
               style={styles.avatar}
             />
             <View style={styles.cameraButton}>
-              <Camera size={16} color={Colors.text.white} />
+              <Camera size={16} color={Colors.white} />
             </View>
           </View>
 
@@ -71,6 +82,8 @@ export default function AccountScreen() {
                 value={formData.name}
                 onChangeText={(value) => handleInputChange('name', value)}
                 autoCapitalize="words"
+                placeholder="Digite seu nome completo"
+                placeholderTextColor={Colors.textSecondary}
               />
             </View>
 
@@ -82,6 +95,8 @@ export default function AccountScreen() {
                 onChangeText={(value) => handleInputChange('email', value)}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                placeholder="Digite seu email"
+                placeholderTextColor={Colors.textSecondary}
               />
             </View>
 
@@ -92,6 +107,8 @@ export default function AccountScreen() {
                 value={formData.phone}
                 onChangeText={(value) => handleInputChange('phone', value)}
                 keyboardType="phone-pad"
+                placeholder="(11) 99999-9999"
+                placeholderTextColor={Colors.textSecondary}
               />
             </View>
 
@@ -116,7 +133,7 @@ export default function AccountScreen() {
               title="Excluir conta"
               onPress={() => Alert.alert('Funcionalidade em desenvolvimento')}
               style={[styles.deleteButton, { backgroundColor: Colors.error }]}
-              textStyle={{ color: Colors.text.white }}
+              textStyle={{ color: Colors.white }}
             />
           </View>
         </View>
@@ -128,7 +145,7 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.backgroundProfile,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
@@ -136,6 +153,17 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 18,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textSecondary,
   },
   avatarContainer: {
     alignItems: 'center',
@@ -158,7 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: Colors.background.primary,
+    borderColor: Colors.background,
   },
   form: {
     gap: 20,
@@ -169,17 +197,18 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text.primary,
+    fontFamily: Fonts.semiBold,
+    color: Colors.textPrimary,
   },
   input: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: Colors.textPrimary,
     borderWidth: 1,
     borderColor: Colors.border,
+    fontFamily: Fonts.regular,
   },
   saveButton: {
     marginTop: 12,
@@ -188,15 +217,20 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   dangerZone: {
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
     borderColor: Colors.error,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   dangerTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: Fonts.semiBold,
     color: Colors.error,
     marginBottom: 12,
   },
