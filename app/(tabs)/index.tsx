@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -17,7 +17,6 @@ import EstablishmentCard from '@/components/EstablishmentCard';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/services/api';
-import { useApi } from '@/hooks/useApi';
 import { Establishment } from '@/types';
 
 export default function HomeScreen() {
@@ -27,39 +26,74 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [categories, setCategories] = useState<string[]>(['Todos']);
-
-  // Load establishments
-  const { 
-    data: establishments, 
-    loading: establishmentsLoading, 
-    error: establishmentsError,
-    execute: loadEstablishments 
-  } = useApi<Establishment[]>(
-    () => apiService.getEstabelecimentos({
-      search: searchQuery || undefined,
-      tipo: activeFilter !== 'Todos' ? activeFilter : undefined
-    }),
-    { immediate: false }
-  );
+  const [establishments, setEstablishments] = useState<Establishment[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load categories
   useEffect(() => {
+    let isMounted = true;
+    
     const loadCategories = async () => {
       try {
         const tipos = await apiService.getTipos();
-        setCategories(['Todos', ...tipos.map(tipo => tipo.nome)]);
+        if (isMounted) {
+          setCategories(['Todos', ...tipos.map(tipo => tipo.nome)]);
+        }
       } catch (error) {
         console.error('Failed to load categories:', error);
-        setCategories(['Todos', 'Restaurante', 'Café', 'Bar', 'Padaria', 'Mercado']);
+        if (isMounted) {
+          setCategories(['Todos', 'Restaurante', 'Café', 'Bar', 'Padaria', 'Mercado']);
+        }
       }
     };
+    
     loadCategories();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // Load establishments function
+  const loadEstablishments = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await apiService.getEstabelecimentos({
+        search: searchQuery || undefined,
+        tipo: activeFilter !== 'Todos' ? activeFilter : undefined
+      });
+      setEstablishments(data);
+    } catch (error) {
+      console.error('Failed to load establishments:', error);
+      setError('Erro ao carregar estabelecimentos');
+      setEstablishments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, activeFilter]);
 
   // Load establishments when filters change
   useEffect(() => {
-    loadEstablishments();
-  }, [searchQuery, activeFilter, loadEstablishments]);
+    let timeoutId: NodeJS.Timeout;
+    
+    // Debounce the search to avoid too many API calls
+    if (searchQuery) {
+      timeoutId = setTimeout(() => {
+        loadEstablishments();
+      }, 500);
+    } else {
+      loadEstablishments();
+    }
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [loadEstablishments]);
 
   if (isBusinessUser) {
     // Business dashboard - simplified for now
@@ -161,12 +195,12 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {establishmentsLoading ? (
+        {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={styles.loadingText}>Carregando estabelecimentos...</Text>
           </View>
-        ) : establishmentsError ? (
+        ) : error ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Erro ao carregar estabelecimentos</Text>
             <TouchableOpacity onPress={loadEstablishments} style={styles.retryButton}>

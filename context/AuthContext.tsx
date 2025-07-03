@@ -22,30 +22,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    let isMounted = true;
+    
+    const checkAuthStatus = async () => {
+      try {
+        // Check if we have a token stored
+        const token = typeof window !== 'undefined' 
+          ? localStorage.getItem('auth_token')
+          : null;
+        
+        if (!token) {
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
 
-  const checkAuthStatus = async () => {
-    try {
-      // Check if we have a token stored
-      const token = typeof window !== 'undefined' 
-        ? localStorage.getItem('auth_token')
-        : null;
-      
-      if (!token) {
-        setLoading(false);
-        return;
+        // For now, we'll assume the user is authenticated if we have a token
+        // In a real implementation, you'd validate the token with the server
+        if (isMounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        if (isMounted) {
+          setUser(null);
+          setLoading(false);
+        }
       }
+    };
 
-      // For now, we'll assume the user is authenticated if we have a token
-      // In a real implementation, you'd validate the token with the server
-      setLoading(false);
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      setUser(null);
-      setLoading(false);
-    }
-  };
+    checkAuthStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - only run once on mount
 
   const clearError = () => {
     setError(null);

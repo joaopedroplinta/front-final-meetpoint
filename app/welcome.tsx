@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
@@ -11,7 +11,7 @@ export default function WelcomeScreen() {
   const { isAuthenticated, loading } = useAuth();
 
   // Redirect to tabs if already authenticated
-  React.useEffect(() => {
+  useEffect(() => {
     if (!loading && isAuthenticated) {
       router.replace('/(tabs)');
     }
@@ -31,6 +31,11 @@ export default function WelcomeScreen() {
         <Text style={styles.loadingText}>Carregando...</Text>
       </View>
     );
+  }
+
+  // Don't render the welcome screen if user is authenticated
+  if (isAuthenticated) {
+    return null;
   }
 
   return (
