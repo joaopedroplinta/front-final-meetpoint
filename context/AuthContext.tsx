@@ -94,7 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           nome: userData.name,
           email: userData.email,
           senha: userData.password,
-          telefone: userData.phone
+          telefone: userData.phone,
+          cpf: userData.cpf
         });
         setUser({
           id: response.cliente.id,

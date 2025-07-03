@@ -112,6 +112,7 @@ class ApiService {
     email: string;
     senha: string;
     telefone?: string;
+    cpf?: string;
   }): Promise<{ cliente: User; token: string }> {
     const response = await this.request<{ cliente: User; token: string }>('/clientes', {
       method: 'POST',
@@ -219,6 +220,7 @@ class ApiService {
     nome?: string;
     email?: string;
     telefone?: string;
+    cpf?: string;
   }): Promise<User> {
     return this.request<User>(`/clientes/${id}`, {
       method: 'PUT',

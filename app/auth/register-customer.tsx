@@ -7,7 +7,8 @@ import {
   ScrollView, 
   SafeAreaView, 
   Platform,
-  Alert
+  Alert,
+  TouchableOpacity
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Eye, EyeOff } from 'lucide-react-native';
@@ -22,6 +23,7 @@ export default function RegisterCustomerScreen() {
     name: '',
     email: '',
     phone: '',
+    cpf: '',
     password: '',
     confirmPassword: '',
   });
@@ -30,6 +32,55 @@ export default function RegisterCustomerScreen() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const formatCPF = (value: string) => {
+    // Remove all non-numeric characters
+    const numbers = value.replace(/\D/g, '');
+    
+    // Apply CPF mask: 000.000.000-00
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})/, '$1-$2');
+    }
+    return value;
+  };
+
+  const handleCPFChange = (value: string) => {
+    const formattedCPF = formatCPF(value);
+    handleInputChange('cpf', formattedCPF);
+  };
+
+  const validateCPF = (cpf: string) => {
+    // Remove formatting
+    const numbers = cpf.replace(/\D/g, '');
+    
+    // Check if has 11 digits
+    if (numbers.length !== 11) return false;
+    
+    // Check if all digits are the same
+    if (/^(\d)\1{10}$/.test(numbers)) return false;
+    
+    // Validate CPF algorithm
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(numbers.charAt(i)) * (10 - i);
+    }
+    let remainder = (sum * 10) % 11;
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    if (remainder !== parseInt(numbers.charAt(9))) return false;
+    
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(numbers.charAt(i)) * (11 - i);
+    }
+    remainder = (sum * 10) % 11;
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    if (remainder !== parseInt(numbers.charAt(10))) return false;
+    
+    return true;
   };
 
   const validateForm = () => {
@@ -43,6 +94,14 @@ export default function RegisterCustomerScreen() {
     }
     if (!formData.phone.trim()) {
       Alert.alert('Erro', 'Por favor, informe seu telefone');
+      return false;
+    }
+    if (!formData.cpf.trim()) {
+      Alert.alert('Erro', 'Por favor, informe seu CPF');
+      return false;
+    }
+    if (!validateCPF(formData.cpf)) {
+      Alert.alert('Erro', 'Por favor, informe um CPF válido');
       return false;
     }
     if (formData.password.length < 6) {
@@ -65,6 +124,7 @@ export default function RegisterCustomerScreen() {
         email: formData.email,
         password: formData.password,
         phone: formData.phone,
+        cpf: formData.cpf.replace(/\D/g, ''), // Send only numbers
         userType: 'customer'
       });
       
@@ -137,6 +197,19 @@ export default function RegisterCustomerScreen() {
             </View>
 
             <View style={styles.inputGroup}>
+              <Text style={styles.label}>CPF</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="000.000.000-00"
+                placeholderTextColor={Colors.textSecondary}
+                value={formData.cpf}
+                onChangeText={handleCPFChange}
+                keyboardType="numeric"
+                maxLength={14}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.label}>Senha</Text>
               <View style={styles.passwordContainer}>
                 <TextInput
@@ -147,8 +220,7 @@ export default function RegisterCustomerScreen() {
                   onChangeText={(value) => handleInputChange('password', value)}
                   secureTextEntry={!showPassword}
                 />
-                <Button
-                  title=""
+                <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeButton}
                 >
@@ -157,7 +229,7 @@ export default function RegisterCustomerScreen() {
                   ) : (
                     <Eye size={20} color={Colors.textSecondary} />
                   )}
-                </Button>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -172,8 +244,7 @@ export default function RegisterCustomerScreen() {
                   onChangeText={(value) => handleInputChange('confirmPassword', value)}
                   secureTextEntry={!showConfirmPassword}
                 />
-                <Button
-                  title=""
+                <TouchableOpacity
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   style={styles.eyeButton}
                 >
@@ -182,7 +253,7 @@ export default function RegisterCustomerScreen() {
                   ) : (
                     <Eye size={20} color={Colors.textSecondary} />
                   )}
-                </Button>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -273,10 +344,8 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
   },
   eyeButton: {
-    backgroundColor: 'transparent',
     paddingHorizontal: 16,
-    paddingVertical: 0,
-    minWidth: 'auto',
+    paddingVertical: 16,
   },
   registerButton: {
     marginTop: 12,
