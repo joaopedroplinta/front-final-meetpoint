@@ -4,9 +4,18 @@ import { useRouter } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { Colors, Fonts } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
+
+  // Redirect to tabs if already authenticated
+  React.useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, loading, router]);
 
   const handleLogin = () => {
     router.push('/auth/login');
@@ -15,6 +24,14 @@ export default function WelcomeScreen() {
   const handleRegister = () => {
     router.push('/auth/register-type');
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.loadingText}>Carregando...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -61,6 +78,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 24,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
   },
   content: {
     flex: 1,
