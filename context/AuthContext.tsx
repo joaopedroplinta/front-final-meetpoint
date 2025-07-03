@@ -21,10 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Remove automatic auth check - user starts logged out
+  // Ensure user starts as null (not authenticated)
   useEffect(() => {
     // Clear any existing tokens on app start to ensure clean state
-    const clearStoredAuth = () => {
+    const clearStoredAuth = async () => {
       try {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth_token');
@@ -138,11 +138,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await apiService.logout();
-      setUser(null);
-      setError(null);
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if logout fails on server, clear local state
+    } finally {
+      // Always clear local state regardless of server response
       setUser(null);
       setError(null);
     }

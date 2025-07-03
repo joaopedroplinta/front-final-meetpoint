@@ -60,6 +60,7 @@ export default function LoginScreen() {
 
     try {
       await login(formData.email, formData.password, userType);
+      // Only redirect after successful login
       router.replace('/(tabs)');
     } catch (error) {
       // Error is already handled by the context and displayed in the UI

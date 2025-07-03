@@ -1,21 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { Colors, Fonts } from '@/constants/Colors';
-import { useAuth } from '@/context/AuthContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { isAuthenticated, loading } = useAuth();
-
-  // Redirect to tabs if already authenticated
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.replace('/(tabs)');
-    }
-  }, [isAuthenticated, loading, router]);
 
   const handleLogin = () => {
     router.push('/auth/login');
@@ -25,16 +16,6 @@ export default function WelcomeScreen() {
     router.push('/auth/register-type');
   };
 
-  // Show loading only if we're actually loading something
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <Text style={styles.loadingText}>Carregando...</Text>
-      </View>
-    );
-  }
-
-  // Always show welcome screen unless explicitly authenticated
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -80,15 +61,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 24,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 18,
-    fontFamily: Fonts.medium,
-    color: Colors.textPrimary,
   },
   content: {
     flex: 1,
