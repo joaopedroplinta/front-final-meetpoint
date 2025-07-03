@@ -52,12 +52,10 @@ export default function EstablishmentScreen() {
 
       console.log('Loading establishment data for ID:', id);
 
-      // Load establishment data
       const establishmentData = await apiService.getEstabelecimentoById(id);
       console.log('Establishment data loaded:', establishmentData);
       setEstablishment(establishmentData);
 
-      // Load ratings for this establishment
       try {
         const ratingsData = await apiService.getAvaliacoesByEstabelecimento(id);
         console.log('Ratings data loaded:', ratingsData);
@@ -120,7 +118,6 @@ export default function EstablishmentScreen() {
             onPress: () => {
               setRating(0);
               setComment('');
-              // Reload ratings to show the new one
               loadEstablishmentData();
             },
           },

@@ -14,7 +14,6 @@ export default function MyRatingsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Calculate content padding to avoid tab bar overlap
   const getContentPaddingBottom = () => {
     const baseTabHeight = 60;
     const bottomInset = insets.bottom;
@@ -44,8 +43,6 @@ export default function MyRatingsScreen() {
       setLoading(true);
       setError(null);
       
-      // Note: You'll need to implement this endpoint in your API
-      // For now, we'll set empty array until the endpoint is available
       setUserRatings([]);
     } catch (error) {
       console.error('Failed to load user ratings:', error);

@@ -14,7 +14,6 @@ export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Calculate content padding to avoid tab bar overlap
   const getContentPaddingBottom = () => {
     const baseTabHeight = 60;
     const bottomInset = insets.bottom;
@@ -45,11 +44,9 @@ export default function AnalyticsScreen() {
       setLoading(true);
       setError(null);
 
-      // Load establishment data
       const establishmentData = await apiService.getEstabelecimentoById(user.businessId);
       setEstablishment(establishmentData);
 
-      // Load ratings for this establishment
       const ratingsData = await apiService.getAvaliacoesByEstabelecimento(user.businessId);
       setRatings(ratingsData);
     } catch (error) {
@@ -80,7 +77,6 @@ export default function AnalyticsScreen() {
     );
   }
 
-  // Calculate analytics from real data
   const averageRating = establishment.averageRating || 0;
   const totalRatings = ratings.length;
   const recentRatings = ratings.slice(0, 3);

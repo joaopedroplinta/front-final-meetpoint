@@ -32,14 +32,12 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Refs to prevent unnecessary re-renders and API calls
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
   const lastSearchRef = useRef('');
   const lastFilterRef = useRef('Todos');
   const isInitialLoadRef = useRef(true);
 
-  // Calculate content padding to avoid tab bar overlap
   const getContentPaddingBottom = () => {
     const baseTabHeight = 60;
     const bottomInset = insets.bottom;
@@ -55,7 +53,6 @@ export default function HomeScreen() {
 
   const contentPaddingBottom = getContentPaddingBottom();
 
-  // Load categories only once on mount
   useEffect(() => {
     let isMounted = true;
     
@@ -78,11 +75,9 @@ export default function HomeScreen() {
     return () => {
       isMounted = false;
     };
-  }, []); // Empty dependency array - only run once
+  }, []);
 
-  // Load establishments function with memoization
   const loadEstablishments = useCallback(async (search: string, filter: string, force = false) => {
-    // Prevent duplicate calls
     if (!force && search === lastSearchRef.current && filter === lastFilterRef.current) {
       return;
     }
@@ -115,28 +110,24 @@ export default function HomeScreen() {
         setLoading(false);
       }
     }
-  }, []); // No dependencies to prevent recreation
+  }, []);
 
-  // Initial load effect - runs only once
   useEffect(() => {
     if (isInitialLoadRef.current) {
       isInitialLoadRef.current = false;
       loadEstablishments('', 'Todos', true);
     }
-  }, []); // Empty dependency array
+  }, []);
 
-  // Search debounce effect
   useEffect(() => {
-    // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Only set timeout if this is not the initial load
     if (!isInitialLoadRef.current) {
       debounceTimeoutRef.current = setTimeout(() => {
         loadEstablishments(searchQuery, activeFilter);
-      }, searchQuery ? 500 : 0); // Debounce search, immediate for filter
+      }, searchQuery ? 500 : 0);
     }
 
     return () => {
@@ -144,9 +135,8 @@ export default function HomeScreen() {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [searchQuery, activeFilter]); // Only depend on the actual state values
+  }, [searchQuery, activeFilter]);
 
-  // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
     
@@ -158,23 +148,19 @@ export default function HomeScreen() {
     };
   }, []);
 
-  // Handle search input change
   const handleSearchChange = useCallback((text: string) => {
     setSearchQuery(text);
   }, []);
 
-  // Handle filter change
   const handleFilterChange = useCallback((filter: string) => {
     setActiveFilter(filter);
   }, []);
 
-  // Handle retry
   const handleRetry = useCallback(() => {
     loadEstablishments(searchQuery, activeFilter, true);
   }, [searchQuery, activeFilter, loadEstablishments]);
 
   if (isBusinessUser) {
-    // Business dashboard - simplified for now
     return (
       <SafeAreaView style={styles.safeArea}>
         <ScrollView 

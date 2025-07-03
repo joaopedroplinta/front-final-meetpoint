@@ -21,7 +21,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Clear any stored auth tokens on app start to ensure clean state
   useEffect(() => {
     const clearStoredAuth = async () => {
       try {
@@ -29,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('auth_token');
         }
       } catch (error) {
-        // Ignore errors - just ensure we start clean
       }
     };
     
@@ -52,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: response.cliente.id,
           name: response.cliente.nome || response.cliente.name,
           email: response.cliente.email,
-          avatar: null, // Don't set default person images
+          avatar: null,
           type: 'customer'
         });
       } else {
@@ -61,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: response.estabelecimento.id,
           name: response.estabelecimento.nome || response.estabelecimento.name,
           email: response.estabelecimento.email,
-          avatar: null, // Don't set default person images
+          avatar: null,
           type: 'business',
           businessId: response.estabelecimento.id
         });
@@ -95,11 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: response.cliente.id,
           name: response.cliente.nome || response.cliente.name,
           email: response.cliente.email,
-          avatar: null, // Don't set default person images
+          avatar: null,
           type: 'customer'
         });
       } else {
-        // First get the tipo_id for the category
         const tipos = await apiService.getTipos();
         const tipo = tipos.find(t => t.nome === userData.businessData.category);
         
@@ -112,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           endereco: userData.businessData.address,
           descricao: userData.businessData.description,
           tipo_id: tipo?.id || 1,
-          categoria: userData.businessData.category // Add category field for debugging
+          categoria: userData.businessData.category
         });
         
         response = await apiService.registerEstabelecimento({
@@ -124,13 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           endereco: userData.businessData.address,
           descricao: userData.businessData.description,
           tipo_id: tipo?.id || 1,
-          categoria: userData.businessData.category // Add this field
+          categoria: userData.businessData.category
         });
         setUser({
           id: response.estabelecimento.id,
           name: response.estabelecimento.nome || response.estabelecimento.name,
           email: response.estabelecimento.email,
-          avatar: null, // Don't set default person images
+          avatar: null,
           type: 'business',
           businessId: response.estabelecimento.id
         });
@@ -152,7 +149,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Always clear local state regardless of server response
       setUser(null);
       setError(null);
     }

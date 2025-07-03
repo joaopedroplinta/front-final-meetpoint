@@ -17,7 +17,6 @@ const EstablishmentCard = ({ establishment }: EstablishmentCardProps) => {
     router.push(`/establishment/${establishment.id}`);
   };
 
-  // Handle both API response formats
   const name = establishment.nome || establishment.name || 'Estabelecimento';
   const address = establishment.endereco || establishment.address || 'Endereço não informado';
   const averageRating = establishment.averageRating || 0;

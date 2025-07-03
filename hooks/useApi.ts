@@ -67,7 +67,7 @@ export function useApi<T>(
     return () => {
       isMountedRef.current = false;
     };
-  }, [immediate]); // Remove execute from dependencies to prevent infinite loop
+  }, [immediate]);
 
   return { ...state, execute, reset };
 }

@@ -38,18 +38,15 @@ class ApiService {
           errorMessage = errorData.message || errorData.error || errorMessage;
           errorDetails = errorData;
         } catch {
-          // If response is not JSON, try to get text
           try {
             const errorText = await response.text();
             if (errorText) {
               errorMessage = errorText;
             }
           } catch {
-            // Keep the default error message
           }
         }
 
-        // Handle specific error cases
         if (response.status === 409) {
           if (errorMessage.toLowerCase().includes('email')) {
             errorMessage = 'Este email já está cadastrado. Tente fazer login ou use outro email.';
@@ -80,7 +77,6 @@ class ApiService {
         throw error;
       }
       
-      // Network or other errors
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new ApiError(0, 'Erro de conexão. Verifique sua internet e tente novamente.');
       }
@@ -91,11 +87,9 @@ class ApiService {
 
   private async getAuthToken(): Promise<string | null> {
     try {
-      // Always use localStorage for web compatibility
       if (typeof window !== 'undefined') {
         return localStorage.getItem('auth_token');
       }
-      // For native platforms, use AsyncStorage as fallback
       return null;
     } catch {
       return null;
@@ -104,12 +98,10 @@ class ApiService {
 
   private async setAuthToken(token: string): Promise<void> {
     try {
-      // Always use localStorage for web compatibility
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', token);
         return;
       }
-      // For native platforms, you would use AsyncStorage here
     } catch (error) {
       console.error('Failed to store auth token:', error);
     }
@@ -117,18 +109,15 @@ class ApiService {
 
   private async removeAuthToken(): Promise<void> {
     try {
-      // Always use localStorage for web compatibility
       if (typeof window !== 'undefined') {
         localStorage.removeItem('auth_token');
         return;
       }
-      // For native platforms, you would use AsyncStorage here
     } catch (error) {
       console.error('Failed to remove auth token:', error);
     }
   }
 
-  // Auth endpoints
   async loginCliente(email: string, password: string): Promise<{ cliente: User; token: string }> {
     const response = await this.request<{ cliente: User; token: string }>('/clientes/login', {
       method: 'POST',
@@ -180,7 +169,7 @@ class ApiService {
     endereco: string;
     descricao?: string;
     tipo_id: number;
-    categoria?: string; // Add categoria field
+    categoria?: string;
   }): Promise<{ estabelecimento: User; token: string }> {
     console.log('API Service - Sending establishment data:', userData);
     
@@ -199,7 +188,6 @@ class ApiService {
     await this.removeAuthToken();
   }
 
-  // Establishments endpoints
   async getEstabelecimentos(params?: {
     search?: string;
     tipo?: string;
@@ -229,7 +217,6 @@ class ApiService {
     });
   }
 
-  // Ratings endpoints
   async getAvaliacoesByEstabelecimento(estabelecimentoId: string): Promise<Rating[]> {
     return this.request<Rating[]>(`/estabelecimentos/${estabelecimentoId}/avaliacoes`);
   }
@@ -264,7 +251,6 @@ class ApiService {
     await this.request(`/avaliacoes/${avaliacaoId}`, { method: 'DELETE' });
   }
 
-  // User profile endpoints
   async getClienteById(id: string): Promise<User> {
     return this.request<User>(`/clientes/${id}`);
   }
@@ -281,7 +267,6 @@ class ApiService {
     });
   }
 
-  // Tipos endpoints
   async getTipos(): Promise<{ id: number; nome: string; descricao?: string }[]> {
     return this.request<{ id: number; nome: string; descricao?: string }[]>('/tipos');
   }
@@ -290,7 +275,6 @@ class ApiService {
     return this.request<{ id: number; nome: string; descricao?: string }>(`/tipos/${id}`);
   }
 
-  // Comentarios endpoints
   async getComentarios(): Promise<any[]> {
     return this.request<any[]>('/comentarios');
   }
@@ -306,7 +290,6 @@ class ApiService {
     });
   }
 
-  // Destaques endpoints
   async getDestaques(): Promise<any[]> {
     return this.request<any[]>('/destaques');
   }
@@ -324,7 +307,6 @@ class ApiService {
     });
   }
 
-  // Items endpoints
   async getItems(): Promise<any[]> {
     return this.request<any[]>('/items');
   }

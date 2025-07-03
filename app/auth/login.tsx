@@ -25,18 +25,16 @@ export default function LoginScreen() {
   const [userType, setUserType] = useState<'customer' | 'business'>('customer');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Clear error when user starts typing
   React.useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         clearError();
-      }, 5000); // Clear error after 5 seconds
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [error, clearError]);
 
   const handleInputChange = (field: string, value: string) => {
-    // Clear error when user starts typing
     if (error) {
       clearError();
     }
@@ -60,10 +58,8 @@ export default function LoginScreen() {
 
     try {
       await login(formData.email, formData.password, userType);
-      // Only redirect after successful login
       router.replace('/(tabs)');
     } catch (error) {
-      // Error is already handled by the context and displayed in the UI
       console.log('Login failed:', error);
     }
   };

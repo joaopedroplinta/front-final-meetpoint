@@ -44,12 +44,11 @@ export default function RegisterBusinessScreen() {
     loadCategories();
   }, []);
 
-  // Clear error when user starts typing
   React.useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         clearError();
-      }, 5000); // Clear error after 5 seconds
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [error, clearError]);
@@ -72,7 +71,6 @@ export default function RegisterBusinessScreen() {
       console.error('Failed to load categories:', error);
       setCategoriesError('Erro ao carregar categorias');
       
-      // Fallback categories - always provide these as backup
       const fallbackCategories = [
         { id: 1, nome: 'Restaurante' },
         { id: 2, nome: 'Café' },
@@ -93,7 +91,6 @@ export default function RegisterBusinessScreen() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    // Clear error when user starts typing
     if (error) {
       clearError();
     }
@@ -181,7 +178,6 @@ export default function RegisterBusinessScreen() {
         ]
       );
     } catch (error) {
-      // Error is already handled by the context and displayed in the UI
       console.log('Registration failed:', error);
     }
   };

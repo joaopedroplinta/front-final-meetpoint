@@ -10,7 +10,6 @@ interface AvatarProps {
 }
 
 const Avatar = ({ uri, name = '', size = 100, style }: AvatarProps) => {
-  // Generate initials from name
   const getInitials = (fullName: string) => {
     if (!fullName) return '?';
     
@@ -22,7 +21,6 @@ const Avatar = ({ uri, name = '', size = 100, style }: AvatarProps) => {
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
 
-  // Generate a consistent color based on name
   const getAvatarColor = (fullName: string) => {
     if (!fullName) return Colors.primary;
     
@@ -42,7 +40,6 @@ const Avatar = ({ uri, name = '', size = 100, style }: AvatarProps) => {
   const initials = getInitials(name);
   const backgroundColor = getAvatarColor(name);
 
-  // If we have a valid URI and it's not a default person image, show it
   const shouldShowImage = uri && 
     !uri.includes('pexels-photo-220453') && 
     !uri.includes('pexels-photo-774909') && 
@@ -60,13 +57,11 @@ const Avatar = ({ uri, name = '', size = 100, style }: AvatarProps) => {
         ]}
         onError={(error) => {
           console.log('Avatar image failed to load:', error.nativeEvent.error);
-          // If image fails to load, fall back to initials
         }}
       />
     );
   }
 
-  // Show initials avatar
   return (
     <View
       style={[

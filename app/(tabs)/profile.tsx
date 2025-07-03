@@ -13,7 +13,6 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
   
-  // Calculate content padding to avoid tab bar overlap
   const getContentPaddingBottom = () => {
     const baseTabHeight = 60;
     const bottomInset = insets.bottom;
@@ -47,7 +46,6 @@ export default function ProfileScreen() {
       router.replace('/welcome');
     } catch (error) {
       console.error('Logout error:', error);
-      // Force navigation even if logout fails
       router.replace('/welcome');
     }
   };

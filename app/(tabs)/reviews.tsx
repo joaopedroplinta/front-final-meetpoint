@@ -15,7 +15,6 @@ export default function ReviewsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Calculate content padding to avoid tab bar overlap
   const getContentPaddingBottom = () => {
     const baseTabHeight = 60;
     const bottomInset = insets.bottom;
@@ -46,11 +45,9 @@ export default function ReviewsScreen() {
       setLoading(true);
       setError(null);
 
-      // Load establishment data
       const establishmentData = await apiService.getEstabelecimentoById(user.businessId);
       setEstablishment(establishmentData);
 
-      // Load ratings for this establishment
       const ratingsData = await apiService.getAvaliacoesByEstabelecimento(user.businessId);
       setAllRatings(ratingsData);
     } catch (error) {

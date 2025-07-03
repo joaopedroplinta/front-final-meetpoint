@@ -30,18 +30,16 @@ export default function RegisterCustomerScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Clear error when user starts typing
   React.useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         clearError();
-      }, 5000); // Clear error after 5 seconds
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [error, clearError]);
 
   const handleInputChange = (field: string, value: string) => {
-    // Clear error when user starts typing
     if (error) {
       clearError();
     }
@@ -49,10 +47,8 @@ export default function RegisterCustomerScreen() {
   };
 
   const formatCPF = (value: string) => {
-    // Remove all non-numeric characters
     const numbers = value.replace(/\D/g, '');
     
-    // Apply CPF mask: 000.000.000-00
     if (numbers.length <= 11) {
       return numbers
         .replace(/(\d{3})(\d)/, '$1.$2')
@@ -68,16 +64,12 @@ export default function RegisterCustomerScreen() {
   };
 
   const validateCPF = (cpf: string) => {
-    // Remove formatting
     const numbers = cpf.replace(/\D/g, '');
     
-    // Check if has 11 digits
     if (numbers.length !== 11) return false;
     
-    // Check if all digits are the same
     if (/^(\d)\1{10}$/.test(numbers)) return false;
     
-    // Validate CPF algorithm
     let sum = 0;
     for (let i = 0; i < 9; i++) {
       sum += parseInt(numbers.charAt(i)) * (10 - i);
@@ -138,7 +130,7 @@ export default function RegisterCustomerScreen() {
         email: formData.email,
         senha: formData.password,
         telefone: formData.phone,
-        cpf: formData.cpf.replace(/\D/g, ''), // Send only numbers
+        cpf: formData.cpf.replace(/\D/g, ''),
         userType: 'customer'
       });
       
@@ -153,7 +145,6 @@ export default function RegisterCustomerScreen() {
         ]
       );
     } catch (error) {
-      // Error is already handled by the context and displayed in the UI
       console.log('Registration failed:', error);
     }
   };

@@ -10,7 +10,6 @@ interface ImagePickerOptions {
 export const useImagePicker = ({ onImageSelected, onError }: ImagePickerOptions) => {
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
-      // Request camera permissions
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
       if (cameraPermission.status !== 'granted') {
         Alert.alert(
@@ -20,7 +19,6 @@ export const useImagePicker = ({ onImageSelected, onError }: ImagePickerOptions)
         return false;
       }
 
-      // Request media library permissions
       const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (mediaPermission.status !== 'granted') {
         Alert.alert(
@@ -80,7 +78,6 @@ export const useImagePicker = ({ onImageSelected, onError }: ImagePickerOptions)
 
   const showImagePickerOptions = () => {
     if (Platform.OS === 'web') {
-      // On web, only show gallery option
       pickImageFromGallery();
       return;
     }

@@ -11,7 +11,6 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const isBusinessUser = user?.type === 'business';
 
-  // Calculate tab bar height based on platform and safe area
   const getTabBarHeight = () => {
     const baseHeight = 60;
     const bottomInset = insets.bottom;
