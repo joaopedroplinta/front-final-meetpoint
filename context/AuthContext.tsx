@@ -160,7 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...userData });
+      console.log('Updating user with data:', userData);
+      const updatedUser = { ...user, ...userData };
+      console.log('Updated user:', updatedUser);
+      setUser(updatedUser);
     }
   };
 

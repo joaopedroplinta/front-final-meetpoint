@@ -47,6 +47,7 @@ export const useImagePicker = ({ onImageSelected, onError }: ImagePickerOptions)
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
+        console.log('Image selected from gallery:', result.assets[0].uri);
         onImageSelected(result.assets[0].uri);
       }
     } catch (error) {
@@ -68,6 +69,7 @@ export const useImagePicker = ({ onImageSelected, onError }: ImagePickerOptions)
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
+        console.log('Photo taken:', result.assets[0].uri);
         onImageSelected(result.assets[0].uri);
       }
     } catch (error) {
