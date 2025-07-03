@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -29,8 +29,23 @@ export default function HomeScreen() {
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use refs to track the latest values without causing re-renders
+  const searchQueryRef = useRef(searchQuery);
+  const activeFilterRef = useRef(activeFilter);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
-  // Load categories
+  // Update refs when state changes
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  useEffect(() => {
+    activeFilterRef.current = activeFilter;
+  }, [activeFilter]);
+
+  // Load categories only once on mount
   useEffect(() => {
     let isMounted = true;
     
@@ -55,44 +70,79 @@ export default function HomeScreen() {
     };
   }, []);
 
-  // Load establishments function
-  const loadEstablishments = useCallback(async () => {
+  // Load establishments function - stable reference
+  const loadEstablishments = useCallback(async (search?: string, filter?: string) => {
+    if (!isMountedRef.current) return;
+    
     setLoading(true);
     setError(null);
     
     try {
       const data = await apiService.getEstabelecimentos({
-        search: searchQuery || undefined,
-        tipo: activeFilter !== 'Todos' ? activeFilter : undefined
+        search: search || undefined,
+        tipo: filter && filter !== 'Todos' ? filter : undefined
       });
-      setEstablishments(data);
+      
+      if (isMountedRef.current) {
+        setEstablishments(data);
+      }
     } catch (error) {
       console.error('Failed to load establishments:', error);
-      setError('Erro ao carregar estabelecimentos');
-      setEstablishments([]);
+      if (isMountedRef.current) {
+        setError('Erro ao carregar estabelecimentos');
+        setEstablishments([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  }, [searchQuery, activeFilter]);
+  }, []);
 
-  // Load establishments when filters change
+  // Debounced search effect
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
-    // Debounce the search to avoid too many API calls
-    if (searchQuery) {
-      timeoutId = setTimeout(() => {
-        loadEstablishments();
-      }, 500);
-    } else {
-      loadEstablishments();
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
-    
+
+    // Set new timeout for search
+    debounceTimeoutRef.current = setTimeout(() => {
+      loadEstablishments(searchQueryRef.current, activeFilterRef.current);
+    }, searchQuery ? 500 : 0); // Debounce search, but load immediately for filter changes
+
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
+  }, [searchQuery, activeFilter, loadEstablishments]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Handle search input change
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  // Handle filter change
+  const handleFilterChange = useCallback((filter: string) => {
+    setActiveFilter(filter);
+  }, []);
+
+  // Handle retry
+  const handleRetry = useCallback(() => {
+    loadEstablishments(searchQueryRef.current, activeFilterRef.current);
   }, [loadEstablishments]);
 
   if (isBusinessUser) {
@@ -164,7 +214,7 @@ export default function HomeScreen() {
               placeholder="Buscar estabelecimentos..."
               placeholderTextColor={Colors.textSecondary}
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={handleSearchChange}
             />
           </View>
 
@@ -180,7 +230,7 @@ export default function HomeScreen() {
                   styles.filterButton,
                   activeFilter === filter && styles.activeFilterButton
                 ]}
-                onPress={() => setActiveFilter(filter)}
+                onPress={() => handleFilterChange(filter)}
               >
                 <Text
                   style={[
@@ -203,7 +253,7 @@ export default function HomeScreen() {
         ) : error ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Erro ao carregar estabelecimentos</Text>
-            <TouchableOpacity onPress={loadEstablishments} style={styles.retryButton}>
+            <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
               <Text style={styles.retryText}>Tentar novamente</Text>
             </TouchableOpacity>
           </View>
