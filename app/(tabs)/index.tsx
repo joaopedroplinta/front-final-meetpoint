@@ -30,20 +30,12 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Use refs to track the latest values without causing re-renders
-  const searchQueryRef = useRef(searchQuery);
-  const activeFilterRef = useRef(activeFilter);
+  // Refs to prevent unnecessary re-renders and API calls
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
-
-  // Update refs when state changes
-  useEffect(() => {
-    searchQueryRef.current = searchQuery;
-  }, [searchQuery]);
-
-  useEffect(() => {
-    activeFilterRef.current = activeFilter;
-  }, [activeFilter]);
+  const lastSearchRef = useRef('');
+  const lastFilterRef = useRef('Todos');
+  const isInitialLoadRef = useRef(true);
 
   // Load categories only once on mount
   useEffect(() => {
@@ -68,11 +60,19 @@ export default function HomeScreen() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, []); // Empty dependency array - only run once
 
-  // Load establishments function - stable reference
-  const loadEstablishments = useCallback(async (search?: string, filter?: string) => {
+  // Load establishments function with memoization
+  const loadEstablishments = useCallback(async (search: string, filter: string, force = false) => {
+    // Prevent duplicate calls
+    if (!force && search === lastSearchRef.current && filter === lastFilterRef.current) {
+      return;
+    }
+    
     if (!isMountedRef.current) return;
+    
+    lastSearchRef.current = search;
+    lastFilterRef.current = filter;
     
     setLoading(true);
     setError(null);
@@ -97,26 +97,36 @@ export default function HomeScreen() {
         setLoading(false);
       }
     }
-  }, []);
+  }, []); // No dependencies to prevent recreation
 
-  // Debounced search effect
+  // Initial load effect - runs only once
+  useEffect(() => {
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      loadEstablishments('', 'Todos', true);
+    }
+  }, []); // Empty dependency array
+
+  // Search debounce effect
   useEffect(() => {
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Set new timeout for search
-    debounceTimeoutRef.current = setTimeout(() => {
-      loadEstablishments(searchQueryRef.current, activeFilterRef.current);
-    }, searchQuery ? 500 : 0); // Debounce search, but load immediately for filter changes
+    // Only set timeout if this is not the initial load
+    if (!isInitialLoadRef.current) {
+      debounceTimeoutRef.current = setTimeout(() => {
+        loadEstablishments(searchQuery, activeFilter);
+      }, searchQuery ? 500 : 0); // Debounce search, immediate for filter
+    }
 
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [searchQuery, activeFilter, loadEstablishments]);
+  }, [searchQuery, activeFilter]); // Only depend on the actual state values
 
   // Cleanup on unmount
   useEffect(() => {
@@ -142,8 +152,8 @@ export default function HomeScreen() {
 
   // Handle retry
   const handleRetry = useCallback(() => {
-    loadEstablishments(searchQueryRef.current, activeFilterRef.current);
-  }, [loadEstablishments]);
+    loadEstablishments(searchQuery, activeFilter, true);
+  }, [searchQuery, activeFilter, loadEstablishments]);
 
   if (isBusinessUser) {
     // Business dashboard - simplified for now
