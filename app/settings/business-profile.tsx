@@ -48,9 +48,11 @@ export default function BusinessProfileScreen() {
 
   const { showImagePickerOptions } = useImagePicker({
     onImageSelected: (uri: string) => {
+      console.log('Image selected in business profile:', uri);
       setProfileImage(uri);
-      // Update user avatar in context
+      // Update user avatar in context immediately
       updateUser({ avatar: uri });
+      Alert.alert('Sucesso', 'Foto do estabelecimento atualizada com sucesso!');
     },
     onError: (error: string) => {
       Alert.alert('Erro', error);

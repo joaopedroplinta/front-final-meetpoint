@@ -58,7 +58,8 @@ const Avatar = ({ uri, name = '', size = 100, style }: AvatarProps) => {
           { width: size, height: size, borderRadius: size / 2 },
           style
         ]}
-        onError={() => {
+        onError={(error) => {
+          console.log('Avatar image failed to load:', error.nativeEvent.error);
           // If image fails to load, fall back to initials
         }}
       />
