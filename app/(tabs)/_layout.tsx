@@ -2,11 +2,11 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Chrome as Home, Star, User, ChartBar as BarChart3, MessageSquare } from 'lucide-react-native';
 import { Colors, Fonts } from '@/constants/Colors';
-import { getCurrentUser } from '@/utils/mockData';
+import { useAuth } from '@/context/AuthContext';
 
 export default function TabLayout() {
-  const currentUser = getCurrentUser();
-  const isBusinessUser = currentUser.type === 'business';
+  const { user } = useAuth();
+  const isBusinessUser = user?.type === 'business';
 
   return (
     <Tabs
