@@ -8,11 +8,11 @@ import {
   SafeAreaView, 
   Platform,
   Alert,
-  Image,
   TouchableOpacity
 } from 'react-native';
 import { Camera, MapPin, Phone, Mail, FileText } from 'lucide-react-native';
 import Button from '@/components/Button';
+import Avatar from '@/components/Avatar';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useImagePicker } from '@/components/ImagePicker';
@@ -42,7 +42,7 @@ export default function BusinessProfileScreen() {
     description: '',
     workingHours: '',
   });
-  const [profileImage, setProfileImage] = useState(user.avatar || '');
+  const [profileImage, setProfileImage] = useState(user.avatar || null);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -118,8 +118,10 @@ export default function BusinessProfileScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: profileImage }}
+            <Avatar
+              uri={profileImage}
+              name={formData.name || user.name}
+              size={120}
               style={styles.establishmentImage}
             />
             <TouchableOpacity 
@@ -303,8 +305,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   establishmentImage: {
-    width: 120,
-    height: 120,
     borderRadius: 16,
   },
   cameraButton: {

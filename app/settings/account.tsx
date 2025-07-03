@@ -8,11 +8,11 @@ import {
   SafeAreaView, 
   Platform,
   Alert,
-  Image,
   TouchableOpacity
 } from 'react-native';
 import { Camera } from 'lucide-react-native';
 import Button from '@/components/Button';
+import Avatar from '@/components/Avatar';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useImagePicker } from '@/components/ImagePicker';
@@ -25,7 +25,7 @@ export default function AccountScreen() {
     email: user?.email || '',
     phone: '', // Remove pre-filled phone data
   });
-  const [profileImage, setProfileImage] = useState(user?.avatar || '');
+  const [profileImage, setProfileImage] = useState(user?.avatar || null);
   const [loading, setLoading] = useState(false);
 
   const { showImagePickerOptions } = useImagePicker({
@@ -84,9 +84,10 @@ export default function AccountScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={{ uri: profileImage }}
-              style={styles.avatar}
+            <Avatar
+              uri={profileImage}
+              name={user.name}
+              size={100}
             />
             <TouchableOpacity 
               style={styles.cameraButton}
@@ -192,11 +193,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
     position: 'relative',
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
   },
   cameraButton: {
     position: 'absolute',

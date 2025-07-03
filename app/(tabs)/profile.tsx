@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogOut, Star, Settings, Bell, Shield, CircleHelp as HelpCircle, Store } from 'lucide-react-native';
 import Button from '@/components/Button';
+import Avatar from '@/components/Avatar';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 
@@ -99,8 +100,10 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Image
-            source={{ uri: user.avatar }}
+          <Avatar
+            uri={user.avatar}
+            name={user.name}
+            size={100}
             style={styles.avatar}
           />
           <Text style={styles.name}>{user.name}</Text>
@@ -190,9 +193,6 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
     marginBottom: 16,
   },
   name: {

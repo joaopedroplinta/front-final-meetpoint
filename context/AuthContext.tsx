@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: response.cliente.id,
           name: response.cliente.nome || response.cliente.name,
           email: response.cliente.email,
-          avatar: response.cliente.avatar || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400',
+          avatar: null, // Don't set default person images
           type: 'customer'
         });
       } else {
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: response.estabelecimento.id,
           name: response.estabelecimento.nome || response.estabelecimento.name,
           email: response.estabelecimento.email,
-          avatar: response.estabelecimento.avatar || 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=400',
+          avatar: null, // Don't set default person images
           type: 'business',
           businessId: response.estabelecimento.id
         });
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: response.cliente.id,
           name: response.cliente.nome || response.cliente.name,
           email: response.cliente.email,
-          avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400',
+          avatar: null, // Don't set default person images
           type: 'customer'
         });
       } else {
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: response.estabelecimento.id,
           name: response.estabelecimento.nome || response.estabelecimento.name,
           email: response.estabelecimento.email,
-          avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=400',
+          avatar: null, // Don't set default person images
           type: 'business',
           businessId: response.estabelecimento.id
         });
