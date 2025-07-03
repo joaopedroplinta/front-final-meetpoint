@@ -8,7 +8,8 @@ import {
   SafeAreaView, 
   Platform,
   Alert,
-  TouchableOpacity
+  TouchableOpacity,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Eye, EyeOff, ChevronDown } from 'lucide-react-native';
@@ -36,6 +37,8 @@ export default function RegisterBusinessScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [categories, setCategories] = useState<{ id: number; nome: string }[]>([]);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -53,10 +56,13 @@ export default function RegisterBusinessScreen() {
 
   const loadCategories = async () => {
     try {
+      setLoadingCategories(true);
+      setCategoriesError(null);
       const tipos = await apiService.getTipos();
       setCategories(tipos);
     } catch (error) {
       console.error('Failed to load categories:', error);
+      setCategoriesError('Erro ao carregar categorias');
       // Fallback categories
       setCategories([
         { id: 1, nome: 'Restaurante' },
@@ -69,6 +75,8 @@ export default function RegisterBusinessScreen() {
         { id: 8, nome: 'Serviços' },
         { id: 9, nome: 'Outros' }
       ]);
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
@@ -155,6 +163,15 @@ export default function RegisterBusinessScreen() {
     }
   };
 
+  const handleCategorySelect = (category: { id: number; nome: string }) => {
+    handleInputChange('category', category.nome);
+    setShowCategoryPicker(false);
+  };
+
+  const retryLoadCategories = () => {
+    loadCategories();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -237,36 +254,65 @@ export default function RegisterBusinessScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Categoria</Text>
-              <TouchableOpacity 
-                style={styles.selectContainer}
-                onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-              >
-                <Text style={[
-                  styles.selectText,
-                  !formData.category && styles.placeholderText
-                ]}>
-                  {formData.category || 'Selecione a categoria'}
-                </Text>
-                <ChevronDown size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
               
-              {showCategoryPicker && (
-                <View style={styles.categoryPicker}>
-                  <ScrollView style={styles.categoryPickerScroll} nestedScrollEnabled>
-                    {categories.map((category) => (
-                      <TouchableOpacity
-                        key={category.id}
-                        style={styles.categoryOption}
-                        onPress={() => {
-                          handleInputChange('category', category.nome);
-                          setShowCategoryPicker(false);
-                        }}
-                      >
-                        <Text style={styles.categoryOptionText}>{category.nome}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+              {loadingCategories ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text style={styles.loadingText}>Carregando categorias...</Text>
                 </View>
+              ) : categoriesError ? (
+                <View style={styles.categoryErrorContainer}>
+                  <Text style={styles.categoryErrorText}>{categoriesError}</Text>
+                  <TouchableOpacity onPress={retryLoadCategories} style={styles.retryButton}>
+                    <Text style={styles.retryText}>Tentar novamente</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  <TouchableOpacity 
+                    style={styles.selectContainer}
+                    onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                  >
+                    <Text style={[
+                      styles.selectText,
+                      !formData.category && styles.placeholderText
+                    ]}>
+                      {formData.category || 'Selecione a categoria'}
+                    </Text>
+                    <ChevronDown 
+                      size={20} 
+                      color={Colors.textSecondary}
+                      style={[
+                        styles.chevronIcon,
+                        showCategoryPicker && styles.chevronIconRotated
+                      ]}
+                    />
+                  </TouchableOpacity>
+                  
+                  {showCategoryPicker && (
+                    <View style={styles.categoryPicker}>
+                      <ScrollView style={styles.categoryPickerScroll} nestedScrollEnabled>
+                        {categories.map((category) => (
+                          <TouchableOpacity
+                            key={category.id}
+                            style={[
+                              styles.categoryOption,
+                              formData.category === category.nome && styles.selectedCategoryOption
+                            ]}
+                            onPress={() => handleCategorySelect(category)}
+                          >
+                            <Text style={[
+                              styles.categoryOptionText,
+                              formData.category === category.nome && styles.selectedCategoryOptionText
+                            ]}>
+                              {category.nome}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </>
               )}
             </View>
 
@@ -430,6 +476,48 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
   },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    fontFamily: Fonts.regular,
+  },
+  categoryErrorContainer: {
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.error,
+    padding: 16,
+    alignItems: 'center',
+    gap: 12,
+  },
+  categoryErrorText: {
+    fontSize: 14,
+    color: Colors.error,
+    fontFamily: Fonts.medium,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+  },
   selectContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -445,9 +533,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     fontFamily: Fonts.regular,
+    flex: 1,
   },
   placeholderText: {
     color: Colors.textSecondary,
+  },
+  chevronIcon: {
+    marginLeft: 8,
+  },
+  chevronIconRotated: {
+    transform: [{ rotate: '180deg' }],
   },
   categoryPicker: {
     backgroundColor: Colors.background,
@@ -456,6 +551,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     marginTop: 4,
     maxHeight: 200,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   categoryPickerScroll: {
     maxHeight: 200,
@@ -465,10 +565,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
+  selectedCategoryOption: {
+    backgroundColor: `${Colors.primary}10`,
+  },
   categoryOptionText: {
     fontSize: 16,
     color: Colors.textPrimary,
     fontFamily: Fonts.regular,
+  },
+  selectedCategoryOptionText: {
+    color: Colors.primary,
+    fontFamily: Fonts.medium,
   },
   passwordContainer: {
     flexDirection: 'row',
