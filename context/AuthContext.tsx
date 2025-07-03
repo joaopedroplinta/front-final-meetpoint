@@ -18,46 +18,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false - no auto-check
   const [error, setError] = useState<string | null>(null);
 
+  // Remove automatic auth check - user starts logged out
   useEffect(() => {
-    let isMounted = true;
-    
-    const checkAuthStatus = async () => {
+    // Clear any existing tokens on app start to ensure clean state
+    const clearStoredAuth = async () => {
       try {
-        // Check if we have a token stored
-        const token = typeof window !== 'undefined' 
-          ? localStorage.getItem('auth_token')
-          : null;
-        
-        if (!token) {
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-
-        // For now, we'll assume the user is authenticated if we have a token
-        // In a real implementation, you'd validate the token with the server
-        if (isMounted) {
-          setLoading(false);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token');
+        } else {
+          const { deleteItemAsync } = await import('expo-secure-store');
+          await deleteItemAsync('auth_token').catch(() => {
+            // Ignore errors if token doesn't exist
+          });
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
-        if (isMounted) {
-          setUser(null);
-          setLoading(false);
-        }
+        // Ignore errors - just ensure we start clean
       }
     };
-
-    checkAuthStatus();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []); // Empty dependency array - only run once on mount
+    
+    clearStoredAuth();
+  }, []);
 
   const clearError = () => {
     setError(null);
