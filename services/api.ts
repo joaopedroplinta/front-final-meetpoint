@@ -180,7 +180,10 @@ class ApiService {
     endereco: string;
     descricao?: string;
     tipo_id: number;
+    categoria?: string; // Add categoria field
   }): Promise<{ estabelecimento: User; token: string }> {
+    console.log('API Service - Sending establishment data:', userData);
+    
     const response = await this.request<{ estabelecimento: User; token: string }>('/estabelecimentos', {
       method: 'POST',
       body: JSON.stringify(userData),

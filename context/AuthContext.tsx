@@ -103,6 +103,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const tipos = await apiService.getTipos();
         const tipo = tipos.find(t => t.nome === userData.businessData.category);
         
+        console.log('Registering business with data:', {
+          nome: userData.businessData.businessName,
+          email: userData.email,
+          senha: userData.password,
+          telefone: userData.phone,
+          cnpj: userData.businessData.cnpj,
+          endereco: userData.businessData.address,
+          descricao: userData.businessData.description,
+          tipo_id: tipo?.id || 1,
+          categoria: userData.businessData.category // Add category field for debugging
+        });
+        
         response = await apiService.registerEstabelecimento({
           nome: userData.businessData.businessName,
           email: userData.email,
@@ -111,7 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           cnpj: userData.businessData.cnpj,
           endereco: userData.businessData.address,
           descricao: userData.businessData.description,
-          tipo_id: tipo?.id || 1
+          tipo_id: tipo?.id || 1,
+          categoria: userData.businessData.category // Add this field
         });
         setUser({
           id: response.estabelecimento.id,
