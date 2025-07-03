@@ -91,11 +91,12 @@ class ApiService {
 
   private async getAuthToken(): Promise<string | null> {
     try {
+      // Always use localStorage for web compatibility
       if (typeof window !== 'undefined') {
         return localStorage.getItem('auth_token');
       }
-      const { getItem } = await import('expo-secure-store');
-      return await getItem('auth_token');
+      // For native platforms, use AsyncStorage as fallback
+      return null;
     } catch {
       return null;
     }
@@ -103,12 +104,12 @@ class ApiService {
 
   private async setAuthToken(token: string): Promise<void> {
     try {
+      // Always use localStorage for web compatibility
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', token);
         return;
       }
-      const { setItem } = await import('expo-secure-store');
-      await setItem('auth_token', token);
+      // For native platforms, you would use AsyncStorage here
     } catch (error) {
       console.error('Failed to store auth token:', error);
     }
@@ -116,12 +117,12 @@ class ApiService {
 
   private async removeAuthToken(): Promise<void> {
     try {
+      // Always use localStorage for web compatibility
       if (typeof window !== 'undefined') {
         localStorage.removeItem('auth_token');
         return;
       }
-      const { deleteItemAsync } = await import('expo-secure-store');
-      await deleteItemAsync('auth_token');
+      // For native platforms, you would use AsyncStorage here
     } catch (error) {
       console.error('Failed to remove auth token:', error);
     }

@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false); // Changed to false - no auto-check
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Remove automatic auth check - user starts logged out
@@ -28,12 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth_token');
-        } else {
-          const { deleteItemAsync } = await import('expo-secure-store');
-          await deleteItemAsync('auth_token').catch(() => {
-            // Ignore errors if token doesn't exist
-          });
         }
+        // For native platforms, you would clear AsyncStorage here
       } catch (error) {
         // Ignore errors - just ensure we start clean
       }
@@ -91,10 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let response;
       if (userData.userType === 'customer') {
         response = await apiService.registerCliente({
-          nome: userData.name,
+          nome: userData.nome || userData.name,
           email: userData.email,
-          senha: userData.password,
-          telefone: userData.phone,
+          senha: userData.senha || userData.password,
+          telefone: userData.telefone || userData.phone,
           cpf: userData.cpf
         });
         setUser({
