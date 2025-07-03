@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Remove automatic auth check - user starts logged out
   useEffect(() => {
     // Clear any existing tokens on app start to ensure clean state
-    const clearStoredAuth = async () => {
+    const clearStoredAuth = () => {
       try {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth_token');
