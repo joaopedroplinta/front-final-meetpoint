@@ -58,13 +58,22 @@ export default function RegisterBusinessScreen() {
     try {
       setLoadingCategories(true);
       setCategoriesError(null);
+      console.log('Loading categories...');
+      
       const tipos = await apiService.getTipos();
-      setCategories(tipos);
+      console.log('Categories loaded:', tipos);
+      
+      if (tipos && tipos.length > 0) {
+        setCategories(tipos);
+      } else {
+        throw new Error('No categories returned from API');
+      }
     } catch (error) {
       console.error('Failed to load categories:', error);
       setCategoriesError('Erro ao carregar categorias');
-      // Fallback categories
-      setCategories([
+      
+      // Fallback categories - always provide these as backup
+      const fallbackCategories = [
         { id: 1, nome: 'Restaurante' },
         { id: 2, nome: 'Café' },
         { id: 3, nome: 'Bar' },
@@ -74,7 +83,10 @@ export default function RegisterBusinessScreen() {
         { id: 7, nome: 'Loja' },
         { id: 8, nome: 'Serviços' },
         { id: 9, nome: 'Outros' }
-      ]);
+      ];
+      
+      console.log('Using fallback categories:', fallbackCategories);
+      setCategories(fallbackCategories);
     } finally {
       setLoadingCategories(false);
     }
@@ -86,6 +98,17 @@ export default function RegisterBusinessScreen() {
       clearError();
     }
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCategorySelect = (category: { id: number; nome: string }) => {
+    console.log('Category selected:', category);
+    handleInputChange('category', category.nome);
+    setShowCategoryPicker(false);
+  };
+
+  const retryLoadCategories = () => {
+    console.log('Retrying to load categories...');
+    loadCategories();
   };
 
   const validateForm = () => {
@@ -163,14 +186,13 @@ export default function RegisterBusinessScreen() {
     }
   };
 
-  const handleCategorySelect = (category: { id: number; nome: string }) => {
-    handleInputChange('category', category.nome);
-    setShowCategoryPicker(false);
-  };
-
-  const retryLoadCategories = () => {
-    loadCategories();
-  };
+  console.log('Current state:', {
+    loadingCategories,
+    categoriesError,
+    categoriesCount: categories.length,
+    selectedCategory: formData.category,
+    showCategoryPicker
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -260,7 +282,7 @@ export default function RegisterBusinessScreen() {
                   <ActivityIndicator size="small" color={Colors.primary} />
                   <Text style={styles.loadingText}>Carregando categorias...</Text>
                 </View>
-              ) : categoriesError ? (
+              ) : categoriesError && categories.length === 0 ? (
                 <View style={styles.categoryErrorContainer}>
                   <Text style={styles.categoryErrorText}>{categoriesError}</Text>
                   <TouchableOpacity onPress={retryLoadCategories} style={styles.retryButton}>
@@ -271,7 +293,10 @@ export default function RegisterBusinessScreen() {
                 <>
                   <TouchableOpacity 
                     style={styles.selectContainer}
-                    onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                    onPress={() => {
+                      console.log('Category picker toggled');
+                      setShowCategoryPicker(!showCategoryPicker);
+                    }}
                   >
                     <Text style={[
                       styles.selectText,
@@ -311,6 +336,12 @@ export default function RegisterBusinessScreen() {
                         ))}
                       </ScrollView>
                     </View>
+                  )}
+                  
+                  {categoriesError && categories.length > 0 && (
+                    <Text style={styles.fallbackText}>
+                      ⚠️ Usando categorias padrão (erro na conexão)
+                    </Text>
                   )}
                 </>
               )}
@@ -540,6 +571,7 @@ const styles = StyleSheet.create({
   },
   chevronIcon: {
     marginLeft: 8,
+    transition: 'transform 0.2s ease',
   },
   chevronIconRotated: {
     transform: [{ rotate: '180deg' }],
@@ -576,6 +608,13 @@ const styles = StyleSheet.create({
   selectedCategoryOptionText: {
     color: Colors.primary,
     fontFamily: Fonts.medium,
+  },
+  fallbackText: {
+    fontSize: 12,
+    color: Colors.warning,
+    fontFamily: Fonts.regular,
+    marginTop: 4,
+    textAlign: 'center',
   },
   passwordContainer: {
     flexDirection: 'row',
