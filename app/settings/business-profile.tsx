@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -15,9 +15,11 @@ import { Camera, MapPin, Phone, Mail, FileText } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useImagePicker } from '@/components/ImagePicker';
+import { apiService } from '@/services/api';
 
 export default function BusinessProfileScreen() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   
   // Only show this screen for business users
   if (!user || user.type !== 'business') {
@@ -30,8 +32,9 @@ export default function BusinessProfileScreen() {
     );
   }
 
+  const [establishment, setEstablishment] = useState(null);
   const [formData, setFormData] = useState({
-    name: user.name || '',
+    name: '',
     category: '',
     address: '',
     phone: '',
@@ -39,7 +42,52 @@ export default function BusinessProfileScreen() {
     description: '',
     workingHours: '',
   });
+  const [profileImage, setProfileImage] = useState(user.avatar || '');
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+
+  const { showImagePickerOptions } = useImagePicker({
+    onImageSelected: (uri: string) => {
+      setProfileImage(uri);
+      // Update user avatar in context
+      updateUser({ avatar: uri });
+    },
+    onError: (error: string) => {
+      Alert.alert('Erro', error);
+    },
+  });
+
+  useEffect(() => {
+    loadEstablishmentData();
+  }, [user]);
+
+  const loadEstablishmentData = async () => {
+    if (!user.businessId) {
+      setLoadingData(false);
+      return;
+    }
+
+    try {
+      const establishmentData = await apiService.getEstabelecimentoById(user.businessId);
+      setEstablishment(establishmentData);
+      
+      // Update form data with establishment info
+      setFormData({
+        name: establishmentData.nome || establishmentData.name || '',
+        category: establishmentData.category || '',
+        address: establishmentData.endereco || establishmentData.address || '',
+        phone: establishmentData.telefone || '',
+        email: establishmentData.email || user.email || '',
+        description: establishmentData.descricao || '',
+        workingHours: '',
+      });
+    } catch (error) {
+      console.error('Failed to load establishment data:', error);
+      // Keep default form data if API fails
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -48,24 +96,22 @@ export default function BusinessProfileScreen() {
   const handleSave = () => {
     setLoading(true);
     
-    // Simulate API call
+    // Simulate API call to update establishment data
     setTimeout(() => {
       setLoading(false);
       Alert.alert('Sucesso', 'Informações do estabelecimento atualizadas com sucesso!');
     }, 1500);
   };
 
-  const handleChangeImage = () => {
-    Alert.alert(
-      'Alterar foto',
-      'Escolha uma opção',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Câmera', onPress: () => Alert.alert('Funcionalidade em desenvolvimento') },
-        { text: 'Galeria', onPress: () => Alert.alert('Funcionalidade em desenvolvimento') },
-      ]
+  if (loadingData) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Carregando dados...</Text>
+        </View>
+      </SafeAreaView>
     );
-  };
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -73,10 +119,14 @@ export default function BusinessProfileScreen() {
         <View style={styles.content}>
           <View style={styles.imageContainer}>
             <Image
-              source={{ uri: user.avatar || 'https://images.pexels.com/photos/1855214/pexels-photo-1855214.jpeg?auto=compress&cs=tinysrgb&w=800' }}
+              source={{ uri: profileImage }}
               style={styles.establishmentImage}
             />
-            <TouchableOpacity style={styles.cameraButton} onPress={handleChangeImage}>
+            <TouchableOpacity 
+              style={styles.cameraButton} 
+              onPress={showImagePickerOptions}
+              activeOpacity={0.8}
+            >
               <Camera size={16} color={Colors.white} />
             </TouchableOpacity>
           </View>
@@ -225,6 +275,17 @@ const styles = StyleSheet.create({
   content: {
     padding: 24,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.textSecondary,
+  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -258,6 +319,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 3,
     borderColor: Colors.background,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   form: {
     gap: 20,

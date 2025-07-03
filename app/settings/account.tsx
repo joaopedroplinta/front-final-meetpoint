@@ -8,22 +8,36 @@ import {
   SafeAreaView, 
   Platform,
   Alert,
-  Image
+  Image,
+  TouchableOpacity
 } from 'react-native';
 import { Camera } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useImagePicker } from '@/components/ImagePicker';
 
 export default function AccountScreen() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: '', // Remove pre-filled phone data
   });
+  const [profileImage, setProfileImage] = useState(user?.avatar || '');
   const [loading, setLoading] = useState(false);
+
+  const { showImagePickerOptions } = useImagePicker({
+    onImageSelected: (uri: string) => {
+      setProfileImage(uri);
+      // Update user avatar in context
+      updateUser({ avatar: uri });
+    },
+    onError: (error: string) => {
+      Alert.alert('Erro', error);
+    },
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -32,9 +46,14 @@ export default function AccountScreen() {
   const handleSave = () => {
     setLoading(true);
     
-    // Simulate API call
+    // Simulate API call to update user data
     setTimeout(() => {
       setLoading(false);
+      // Update user data in context
+      updateUser({
+        name: formData.name,
+        email: formData.email,
+      });
       Alert.alert('Sucesso', 'Informações atualizadas com sucesso!');
     }, 1500);
   };
@@ -66,12 +85,16 @@ export default function AccountScreen() {
         <View style={styles.content}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{ uri: user.avatar }}
+              source={{ uri: profileImage }}
               style={styles.avatar}
             />
-            <View style={styles.cameraButton}>
+            <TouchableOpacity 
+              style={styles.cameraButton}
+              onPress={showImagePickerOptions}
+              activeOpacity={0.8}
+            >
               <Camera size={16} color={Colors.white} />
-            </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.form}>
@@ -187,6 +210,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 3,
     borderColor: Colors.background,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   form: {
     gap: 20,
