@@ -141,6 +141,8 @@ export default function LoginScreen() {
                 onChangeText={(value) => handleInputChange('email', value)}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoComplete="email"
+                textContentType="emailAddress"
               />
             </View>
 
@@ -154,6 +156,8 @@ export default function LoginScreen() {
                   value={formData.password}
                   onChangeText={(value) => handleInputChange('password', value)}
                   secureTextEntry={!showPassword}
+                  autoComplete="password"
+                  textContentType="password"
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
@@ -175,7 +179,7 @@ export default function LoginScreen() {
               style={styles.loginButton}
             />
 
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Funcionalidade em desenvolvimento')}>
               <Text style={styles.forgotPassword}>
                 Esqueceu sua senha?
               </Text>
