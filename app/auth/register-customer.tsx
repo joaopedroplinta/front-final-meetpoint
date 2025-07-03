@@ -18,7 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterCustomerScreen() {
   const router = useRouter();
-  const { register, loading, error } = useAuth();
+  const { register, loading, error, clearError } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -30,7 +30,21 @@ export default function RegisterCustomerScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Clear error when user starts typing
+  React.useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000); // Clear error after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
+
   const handleInputChange = (field: string, value: string) => {
+    // Clear error when user starts typing
+    if (error) {
+      clearError();
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -139,7 +153,8 @@ export default function RegisterCustomerScreen() {
         ]
       );
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível criar sua conta. Tente novamente.');
+      // Error is already handled by the context and displayed in the UI
+      console.log('Registration failed:', error);
     }
   };
 
@@ -155,6 +170,9 @@ export default function RegisterCustomerScreen() {
           {error && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={clearError} style={styles.errorCloseButton}>
+                <Text style={styles.errorCloseText}>✕</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -300,12 +318,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   errorText: {
     color: Colors.error,
     fontSize: 14,
     fontFamily: Fonts.medium,
-    textAlign: 'center',
+    flex: 1,
+  },
+  errorCloseButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  errorCloseText: {
+    color: Colors.error,
+    fontSize: 16,
+    fontFamily: Fonts.bold,
   },
   form: {
     gap: 20,

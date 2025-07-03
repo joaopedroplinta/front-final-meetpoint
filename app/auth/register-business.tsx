@@ -19,7 +19,7 @@ import { apiService } from '@/services/api';
 
 export default function RegisterBusinessScreen() {
   const router = useRouter();
-  const { register, loading, error } = useAuth();
+  const { register, loading, error, clearError } = useAuth();
   const [formData, setFormData] = useState({
     businessName: '',
     ownerName: '',
@@ -40,6 +40,16 @@ export default function RegisterBusinessScreen() {
   useEffect(() => {
     loadCategories();
   }, []);
+
+  // Clear error when user starts typing
+  React.useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000); // Clear error after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
 
   const loadCategories = async () => {
     try {
@@ -63,6 +73,10 @@ export default function RegisterBusinessScreen() {
   };
 
   const handleInputChange = (field: string, value: string) => {
+    // Clear error when user starts typing
+    if (error) {
+      clearError();
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -136,7 +150,8 @@ export default function RegisterBusinessScreen() {
         ]
       );
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível cadastrar o estabelecimento. Tente novamente.');
+      // Error is already handled by the context and displayed in the UI
+      console.log('Registration failed:', error);
     }
   };
 
@@ -152,6 +167,9 @@ export default function RegisterBusinessScreen() {
           {error && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={clearError} style={styles.errorCloseButton}>
+                <Text style={styles.errorCloseText}>✕</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -234,18 +252,20 @@ export default function RegisterBusinessScreen() {
               
               {showCategoryPicker && (
                 <View style={styles.categoryPicker}>
-                  {categories.map((category) => (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={styles.categoryOption}
-                      onPress={() => {
-                        handleInputChange('category', category.nome);
-                        setShowCategoryPicker(false);
-                      }}
-                    >
-                      <Text style={styles.categoryOptionText}>{category.nome}</Text>
-                    </TouchableOpacity>
-                  ))}
+                  <ScrollView style={styles.categoryPickerScroll} nestedScrollEnabled>
+                    {categories.map((category) => (
+                      <TouchableOpacity
+                        key={category.id}
+                        style={styles.categoryOption}
+                        onPress={() => {
+                          handleInputChange('category', category.nome);
+                          setShowCategoryPicker(false);
+                        }}
+                      >
+                        <Text style={styles.categoryOptionText}>{category.nome}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
             </View>
@@ -367,12 +387,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   errorText: {
     color: Colors.error,
     fontSize: 14,
     fontFamily: Fonts.medium,
-    textAlign: 'center',
+    flex: 1,
+  },
+  errorCloseButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  errorCloseText: {
+    color: Colors.error,
+    fontSize: 16,
+    fontFamily: Fonts.bold,
   },
   form: {
     gap: 20,
@@ -423,6 +455,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     marginTop: 4,
+    maxHeight: 200,
+  },
+  categoryPickerScroll: {
     maxHeight: 200,
   },
   categoryOption: {

@@ -3,7 +3,7 @@ import { Establishment, Rating, User } from '@/types';
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public details?: any) {
     super(message);
     this.name = 'ApiError';
   }
@@ -30,8 +30,47 @@ class ApiService {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new ApiError(response.status, errorText || `HTTP ${response.status}: ${response.statusText}`);
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        let errorDetails = null;
+
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          errorDetails = errorData;
+        } catch {
+          // If response is not JSON, try to get text
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          } catch {
+            // Keep the default error message
+          }
+        }
+
+        // Handle specific error cases
+        if (response.status === 409) {
+          if (errorMessage.toLowerCase().includes('email')) {
+            errorMessage = 'Este email já está cadastrado. Tente fazer login ou use outro email.';
+          } else if (errorMessage.toLowerCase().includes('cpf')) {
+            errorMessage = 'Este CPF já está cadastrado. Verifique os dados ou tente fazer login.';
+          } else if (errorMessage.toLowerCase().includes('cnpj')) {
+            errorMessage = 'Este CNPJ já está cadastrado. Verifique os dados ou tente fazer login.';
+          } else {
+            errorMessage = 'Dados já cadastrados no sistema. Verifique as informações.';
+          }
+        } else if (response.status === 400) {
+          errorMessage = errorMessage || 'Dados inválidos. Verifique as informações e tente novamente.';
+        } else if (response.status === 401) {
+          errorMessage = 'Email ou senha incorretos.';
+        } else if (response.status === 404) {
+          errorMessage = 'Recurso não encontrado.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Erro interno do servidor. Tente novamente mais tarde.';
+        }
+
+        throw new ApiError(response.status, errorMessage, errorDetails);
       }
 
       const data = await response.json();
@@ -40,7 +79,13 @@ class ApiService {
       if (error instanceof ApiError) {
         throw error;
       }
-      throw new ApiError(0, 'Network error or server unavailable');
+      
+      // Network or other errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new ApiError(0, 'Erro de conexão. Verifique sua internet e tente novamente.');
+      }
+      
+      throw new ApiError(0, 'Erro inesperado. Tente novamente.');
     }
   }
 

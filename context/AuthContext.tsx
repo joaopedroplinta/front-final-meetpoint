@@ -11,6 +11,7 @@ interface AuthContextType {
   updateUser: (userData: Partial<User>) => void;
   isAuthenticated: boolean;
   error: string | null;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,6 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setLoading(false);
     }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   const login = async (email: string, password: string, userType: 'customer' | 'business') => {
@@ -167,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUser,
     isAuthenticated: !!user,
     error,
+    clearError,
   };
 
   return (

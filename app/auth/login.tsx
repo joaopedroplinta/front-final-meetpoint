@@ -17,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, clearError } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,7 +25,21 @@ export default function LoginScreen() {
   const [userType, setUserType] = useState<'customer' | 'business'>('customer');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Clear error when user starts typing
+  React.useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000); // Clear error after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error, clearError]);
+
   const handleInputChange = (field: string, value: string) => {
+    // Clear error when user starts typing
+    if (error) {
+      clearError();
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -48,7 +62,8 @@ export default function LoginScreen() {
       await login(formData.email, formData.password, userType);
       router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('Erro', 'Email ou senha incorretos');
+      // Error is already handled by the context and displayed in the UI
+      console.log('Login failed:', error);
     }
   };
 
@@ -72,6 +87,9 @@ export default function LoginScreen() {
           {error && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={clearError} style={styles.errorCloseButton}>
+                <Text style={styles.errorCloseText}>✕</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -213,12 +231,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   errorText: {
     color: Colors.error,
     fontSize: 14,
     fontFamily: Fonts.medium,
-    textAlign: 'center',
+    flex: 1,
+  },
+  errorCloseButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  errorCloseText: {
+    color: Colors.error,
+    fontSize: 16,
+    fontFamily: Fonts.bold,
   },
   userTypeContainer: {
     marginBottom: 24,
