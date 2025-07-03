@@ -4,14 +4,32 @@ import { Star, Filter, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/services/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ReviewsScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [establishment, setEstablishment] = useState(null);
   const [allRatings, setAllRatings] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Calculate content padding to avoid tab bar overlap
+  const getContentPaddingBottom = () => {
+    const baseTabHeight = 60;
+    const bottomInset = insets.bottom;
+    
+    if (Platform.OS === 'ios') {
+      return baseTabHeight + bottomInset + 16;
+    } else if (Platform.OS === 'android') {
+      return baseTabHeight + Math.max(bottomInset, 8) + 16;
+    } else {
+      return baseTabHeight + 16;
+    }
+  };
+
+  const contentPaddingBottom = getContentPaddingBottom();
 
   useEffect(() => {
     loadBusinessData();
@@ -167,7 +185,7 @@ export default function ReviewsScreen() {
             keyExtractor={(item) => item.id}
             renderItem={renderRatingItem}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={[styles.listContainer, { paddingBottom: contentPaddingBottom }]}
           />
         ) : (
           <View style={styles.emptyContainer}>

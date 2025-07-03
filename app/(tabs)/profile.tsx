@@ -6,10 +6,28 @@ import Button from '@/components/Button';
 import Avatar from '@/components/Avatar';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const insets = useSafeAreaInsets();
+  
+  // Calculate content padding to avoid tab bar overlap
+  const getContentPaddingBottom = () => {
+    const baseTabHeight = 60;
+    const bottomInset = insets.bottom;
+    
+    if (Platform.OS === 'ios') {
+      return baseTabHeight + bottomInset + 16;
+    } else if (Platform.OS === 'android') {
+      return baseTabHeight + Math.max(bottomInset, 8) + 16;
+    } else {
+      return baseTabHeight + 16;
+    }
+  };
+
+  const contentPaddingBottom = getContentPaddingBottom();
   
   if (!user) {
     return (
@@ -98,7 +116,11 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
+      >
         <View style={styles.header}>
           <Avatar
             uri={user.avatar}

@@ -18,9 +18,11 @@ import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/services/api';
 import { Establishment } from '@/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const isBusinessUser = user?.type === 'business';
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +38,22 @@ export default function HomeScreen() {
   const lastSearchRef = useRef('');
   const lastFilterRef = useRef('Todos');
   const isInitialLoadRef = useRef(true);
+
+  // Calculate content padding to avoid tab bar overlap
+  const getContentPaddingBottom = () => {
+    const baseTabHeight = 60;
+    const bottomInset = insets.bottom;
+    
+    if (Platform.OS === 'ios') {
+      return baseTabHeight + bottomInset + 16;
+    } else if (Platform.OS === 'android') {
+      return baseTabHeight + Math.max(bottomInset, 8) + 16;
+    } else {
+      return baseTabHeight + 16;
+    }
+  };
+
+  const contentPaddingBottom = getContentPaddingBottom();
 
   // Load categories only once on mount
   useEffect(() => {
@@ -159,7 +177,11 @@ export default function HomeScreen() {
     // Business dashboard - simplified for now
     return (
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.container} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
+        >
           <View style={styles.businessContent}>
             <View style={styles.businessHeader}>
               <Image
@@ -273,7 +295,7 @@ export default function HomeScreen() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <EstablishmentCard establishment={item} />}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={[styles.listContainer, { paddingBottom: contentPaddingBottom }]}
           />
         ) : (
           <View style={styles.emptyContainer}>

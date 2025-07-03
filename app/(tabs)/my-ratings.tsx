@@ -5,12 +5,30 @@ import UserRatingCard from '@/components/UserRatingCard';
 import { Colors, Fonts } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/services/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MyRatingsScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [userRatings, setUserRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Calculate content padding to avoid tab bar overlap
+  const getContentPaddingBottom = () => {
+    const baseTabHeight = 60;
+    const bottomInset = insets.bottom;
+    
+    if (Platform.OS === 'ios') {
+      return baseTabHeight + bottomInset + 16;
+    } else if (Platform.OS === 'android') {
+      return baseTabHeight + Math.max(bottomInset, 8) + 16;
+    } else {
+      return baseTabHeight + 16;
+    }
+  };
+
+  const contentPaddingBottom = getContentPaddingBottom();
 
   useEffect(() => {
     loadUserRatings();
@@ -62,7 +80,7 @@ export default function MyRatingsScreen() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <UserRatingCard rating={item} />}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={[styles.listContainer, { paddingBottom: contentPaddingBottom }]}
           />
         ) : (
           <View style={styles.emptyContainer}>
