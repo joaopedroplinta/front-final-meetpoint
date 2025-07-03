@@ -1,73 +1,124 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView, Platform, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, SafeAreaView, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Star, Filter, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { Colors, Fonts } from '@/constants/Colors';
-import { getCurrentUser, getBusinessEstablishment, getEstablishmentRatings } from '@/utils/mockData';
+import { useAuth } from '@/context/AuthContext';
+import { apiService } from '@/services/api';
 
 export default function ReviewsScreen() {
-  const currentUser = getCurrentUser();
-  const establishment = currentUser.type === 'business' && currentUser.businessId 
-    ? getBusinessEstablishment(currentUser.businessId) 
-    : null;
-  
-  const allRatings = establishment ? getEstablishmentRatings(establishment.id) : [];
+  const { user } = useAuth();
+  const [establishment, setEstablishment] = useState(null);
+  const [allRatings, setAllRatings] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!establishment) {
+  useEffect(() => {
+    loadBusinessData();
+  }, [user]);
+
+  const loadBusinessData = async () => {
+    if (!user || user.type !== 'business' || !user.businessId) {
+      setError('Acesso restrito a estabelecimentos');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load establishment data
+      const establishmentData = await apiService.getEstabelecimentoById(user.businessId);
+      setEstablishment(establishmentData);
+
+      // Load ratings for this establishment
+      const ratingsData = await apiService.getAvaliacoesByEstabelecimento(user.businessId);
+      setAllRatings(ratingsData);
+    } catch (error) {
+      console.error('Failed to load business data:', error);
+      setError('Erro ao carregar dados do estabelecimento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Carregando avaliações...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !establishment) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Estabelecimento não encontrado</Text>
+          <Text style={styles.errorText}>{error || 'Estabelecimento não encontrado'}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   const filteredRatings = allRatings.filter(rating => {
+    const ratingValue = rating.nota || rating.rating || 0;
     if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'high') return rating.rating >= 4;
-    if (selectedFilter === 'low') return rating.rating <= 2;
+    if (selectedFilter === 'high') return ratingValue >= 4;
+    if (selectedFilter === 'low') return ratingValue <= 2;
     return true;
   });
 
   const filters = [
     { key: 'all', label: 'Todas', count: allRatings.length },
-    { key: 'high', label: 'Positivas', count: allRatings.filter(r => r.rating >= 4).length },
-    { key: 'low', label: 'Negativas', count: allRatings.filter(r => r.rating <= 2).length },
+    { key: 'high', label: 'Positivas', count: allRatings.filter(r => (r.nota || r.rating || 0) >= 4).length },
+    { key: 'low', label: 'Negativas', count: allRatings.filter(r => (r.nota || r.rating || 0) <= 2).length },
   ];
 
-  const renderRatingItem = ({ item }: { item: any }) => (
-    <View style={styles.ratingCard}>
-      <View style={styles.ratingHeader}>
-        <View style={styles.ratingStars}>
-          {[...Array(5)].map((_, i) => (
-            <Star
-              key={i}
-              size={18}
-              color={i < item.rating ? Colors.primary : Colors.textSecondary}
-              fill={i < item.rating ? Colors.primary : 'transparent'}
-            />
-          ))}
+  const renderRatingItem = ({ item }) => {
+    const ratingValue = item.nota || item.rating || 0;
+    const comment = item.comentario || item.comment || 'Sem comentário';
+    const date = item.data_avaliacao || item.date || 'Data não informada';
+
+    return (
+      <View style={styles.ratingCard}>
+        <View style={styles.ratingHeader}>
+          <View style={styles.ratingStars}>
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                size={18}
+                color={i < ratingValue ? Colors.primary : Colors.textSecondary}
+                fill={i < ratingValue ? Colors.primary : 'transparent'}
+              />
+            ))}
+          </View>
+          <Text style={styles.ratingDate}>{date}</Text>
         </View>
-        <Text style={styles.ratingDate}>{item.date}</Text>
+        <Text style={styles.ratingComment}>{comment}</Text>
+        <View style={styles.ratingFooter}>
+          <Text style={styles.ratingUser}>Cliente</Text>
+          {ratingValue >= 4 ? (
+            <View style={styles.positiveIndicator}>
+              <TrendingUp size={16} color={Colors.success} />
+              <Text style={styles.positiveText}>Positiva</Text>
+            </View>
+          ) : ratingValue <= 2 ? (
+            <View style={styles.negativeIndicator}>
+              <TrendingDown size={16} color={Colors.error} />
+              <Text style={styles.negativeText}>Negativa</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
-      <Text style={styles.ratingComment}>{item.comment}</Text>
-      <View style={styles.ratingFooter}>
-        <Text style={styles.ratingUser}>Cliente anônimo</Text>
-        {item.rating >= 4 ? (
-          <View style={styles.positiveIndicator}>
-            <TrendingUp size={16} color={Colors.success} />
-            <Text style={styles.positiveText}>Positiva</Text>
-          </View>
-        ) : item.rating <= 2 ? (
-          <View style={styles.negativeIndicator}>
-            <TrendingDown size={16} color={Colors.error} />
-            <Text style={styles.negativeText}>Negativa</Text>
-          </View>
-        ) : null}
-      </View>
-    </View>
-  );
+    );
+  };
+
+  const averageRating = establishment.averageRating || 0;
+  const totalRatings = allRatings.length;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -77,11 +128,11 @@ export default function ReviewsScreen() {
             <Text style={styles.summaryTitle}>Resumo das Avaliações</Text>
             <View style={styles.summaryContent}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{establishment.averageRating.toFixed(1)}</Text>
+                <Text style={styles.summaryValue}>{averageRating.toFixed(1)}</Text>
                 <Text style={styles.summaryLabel}>Média Geral</Text>
               </View>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{establishment.numRatings}</Text>
+                <Text style={styles.summaryValue}>{totalRatings}</Text>
                 <Text style={styles.summaryLabel}>Total</Text>
               </View>
             </View>
@@ -145,6 +196,17 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.textSecondary,
   },
   errorContainer: {
     flex: 1,

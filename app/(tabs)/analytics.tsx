@@ -1,67 +1,114 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { TrendingUp, Users, Star, MessageSquare, Calendar } from 'lucide-react-native';
 import { Colors, Fonts } from '@/constants/Colors';
-import { getCurrentUser, getBusinessEstablishment, getEstablishmentRatings } from '@/utils/mockData';
+import { useAuth } from '@/context/AuthContext';
+import { apiService } from '@/services/api';
 
 export default function AnalyticsScreen() {
-  const currentUser = getCurrentUser();
-  const establishment = currentUser.type === 'business' && currentUser.businessId 
-    ? getBusinessEstablishment(currentUser.businessId) 
-    : null;
-  
-  const ratings = establishment ? getEstablishmentRatings(establishment.id) : [];
+  const { user } = useAuth();
+  const [establishment, setEstablishment] = useState(null);
+  const [ratings, setRatings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!establishment) {
+  useEffect(() => {
+    loadBusinessData();
+  }, [user]);
+
+  const loadBusinessData = async () => {
+    if (!user || user.type !== 'business' || !user.businessId) {
+      setError('Acesso restrito a estabelecimentos');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load establishment data
+      const establishmentData = await apiService.getEstabelecimentoById(user.businessId);
+      setEstablishment(establishmentData);
+
+      // Load ratings for this establishment
+      const ratingsData = await apiService.getAvaliacoesByEstabelecimento(user.businessId);
+      setRatings(ratingsData);
+    } catch (error) {
+      console.error('Failed to load business data:', error);
+      setError('Erro ao carregar dados do estabelecimento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Estabelecimento não encontrado</Text>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Carregando dados...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  if (error || !establishment) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || 'Estabelecimento não encontrado'}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Calculate analytics from real data
+  const averageRating = establishment.averageRating || 0;
+  const totalRatings = ratings.length;
+  const recentRatings = ratings.slice(0, 3);
+
   const analyticsData = [
     {
       icon: <Star size={24} color={Colors.primary} />,
       title: 'Avaliação Média',
-      value: establishment.averageRating.toFixed(1),
-      subtitle: 'Baseado em ' + establishment.numRatings + ' avaliações',
+      value: averageRating.toFixed(1),
+      subtitle: `Baseado em ${totalRatings} avaliações`,
       color: Colors.primary,
     },
     {
       icon: <MessageSquare size={24} color={Colors.success} />,
       title: 'Total de Avaliações',
-      value: establishment.numRatings.toString(),
-      subtitle: 'Este mês: +12',
+      value: totalRatings.toString(),
+      subtitle: 'Total recebidas',
       color: Colors.success,
     },
     {
       icon: <Users size={24} color={Colors.primary} />,
       title: 'Visualizações',
-      value: '1.2k',
-      subtitle: 'Este mês: +15%',
+      value: '0',
+      subtitle: 'Dados em breve',
       color: Colors.primary,
     },
     {
       icon: <TrendingUp size={24} color={Colors.success} />,
       title: 'Crescimento',
-      value: '+8.5%',
-      subtitle: 'Comparado ao mês anterior',
+      value: '+0%',
+      subtitle: 'Dados em breve',
       color: Colors.success,
     },
   ];
-
-  const recentRatings = ratings.slice(0, 3);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.establishmentHeader}>
-            <Text style={styles.establishmentName}>{establishment.name}</Text>
-            <Text style={styles.establishmentCategory}>{establishment.category}</Text>
+            <Text style={styles.establishmentName}>
+              {establishment.nome || establishment.name || 'Meu Estabelecimento'}
+            </Text>
+            <Text style={styles.establishmentCategory}>
+              {establishment.category || 'Estabelecimento'}
+            </Text>
           </View>
 
           <View style={styles.analyticsGrid}>
@@ -93,14 +140,18 @@ export default function AnalyticsScreen() {
                           <Star
                             key={i}
                             size={16}
-                            color={i < rating.rating ? Colors.primary : Colors.textSecondary}
-                            fill={i < rating.rating ? Colors.primary : 'transparent'}
+                            color={i < (rating.nota || rating.rating || 0) ? Colors.primary : Colors.textSecondary}
+                            fill={i < (rating.nota || rating.rating || 0) ? Colors.primary : 'transparent'}
                           />
                         ))}
                       </View>
-                      <Text style={styles.ratingDate}>{rating.date}</Text>
+                      <Text style={styles.ratingDate}>
+                        {rating.data_avaliacao || rating.date || 'Data não informada'}
+                      </Text>
                     </View>
-                    <Text style={styles.ratingComment}>{rating.comment}</Text>
+                    <Text style={styles.ratingComment}>
+                      {rating.comentario || rating.comment || 'Sem comentário'}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -128,6 +179,17 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: Fonts.regular,
+    color: Colors.textSecondary,
   },
   errorContainer: {
     flex: 1,

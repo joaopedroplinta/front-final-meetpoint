@@ -216,7 +216,7 @@ class ApiService {
   }
 
   async getEstabelecimentoById(id: string): Promise<Establishment> {
-    return this.request<Establishment>(`/estabelecimento/${id}`);
+    return this.request<Establishment>(`/estabelecimentos/${id}`);
   }
 
   async updateEstabelecimento(id: string, data: Partial<Establishment>): Promise<Establishment> {
@@ -229,6 +229,10 @@ class ApiService {
   // Ratings endpoints
   async getAvaliacoesByEstabelecimento(estabelecimentoId: string): Promise<Rating[]> {
     return this.request<Rating[]>(`/estabelecimentos/${estabelecimentoId}/avaliacoes`);
+  }
+
+  async getAvaliacoesByCliente(clienteId: string): Promise<Rating[]> {
+    return this.request<Rating[]>(`/clientes/${clienteId}/avaliacoes`);
   }
 
   async createAvaliacao(data: {
